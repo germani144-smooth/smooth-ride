@@ -33,6 +33,7 @@ document
 // ---- Drives and recording ----
 const drivesView = createDrivesView({
   list: $("#drive-list"),
+  profile: $("#profile"),
   importInput: $("#gpx-file"),
   demoButton: $("#demo-btn"),
   status: $("#gpx-status"),

@@ -67,6 +67,14 @@ finish; the drive appears on the **Drives** tab.
 through exactly the same analysis as live drives. Loggers that include speed in the GPX give
 cleaner numbers; without it, speed is worked out from the positions.
 
+### Your overall score
+
+The top of the **Drives** tab shows your overall score: every drive's score weighted by its
+distance, so a 40 km drive counts ten times as much as a 4 km one. For example, 40 km at 80
+plus 4 km at 30 gives (80×40 + 30×4) / 44 = 75. Live and GPX drives both count; demo drives
+and drives too short to score don't. It updates as you add or delete drives, and when the
+scoring is retuned.
+
 ### Seeing a drive on the map
 
 To try it without driving, tap **Drives → Demo drive**: it adds a simulated 3.4 km drive

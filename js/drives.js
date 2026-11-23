@@ -11,6 +11,7 @@ import {
   scoreClass,
 } from "./core/format.js";
 import { db } from "./db.js";
+import { profileScore } from "./core/profile.js";
 import { showDriveMap } from "./map.js";
 
 const SOURCE_LABEL = { live: "Live", gpx: "GPX", demo: "Demo" };
@@ -26,7 +27,7 @@ const el = (tag, props = {}, children = []) => {
   return node;
 };
 
-export function createDrivesView({ list, importInput, demoButton, status, isRecording }) {
+export function createDrivesView({ list, profile, importInput, demoButton, status, isRecording }) {
   let open = null; // id of the expanded drive
   let map = null; // Leaflet map of the expanded drive
   let renderToken = 0;
@@ -114,11 +115,33 @@ export function createDrivesView({ list, importInput, demoButton, status, isReco
     return wrap;
   }
 
+  /** Overall score: every real drive weighted by distance. */
+  function renderProfile(drives) {
+    const p = profileScore(drives);
+    const scoreText = p.score == null ? "–" : String(p.score);
+    const sub =
+      p.score == null
+        ? "Your overall score appears after your first scored drive."
+        : `${fmtDistance(p.distance)} · ${p.drives} drive${p.drives === 1 ? "" : "s"}`;
+    profile.replaceChildren(
+      el("span", { class: "profile-score " + scoreClass(p.score), text: scoreText }),
+      el("span", { class: "profile-main" }, [
+        el("span", { class: "profile-title", text: "Your score" }),
+        el("span", { class: "profile-sub", text: sub }),
+        el("span", {
+          class: "profile-note",
+          text: "Every drive weighted by its distance. Demo drives don't count.",
+        }),
+      ]),
+    );
+  }
+
   async function render() {
     const token = ++renderToken;
     const drives = sortDrives((await db.all()).filter((d) => !d.inProgress && d.summary));
     if (token !== renderToken) return;
     disposeMap();
+    renderProfile(drives);
     list.replaceChildren();
     if (!drives.length) {
       list.appendChild(
