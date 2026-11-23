@@ -50,12 +50,13 @@
 }
 
 /* Dark-friendly Leaflet chrome */
-.drive-map .leaflet-control-attribution {
+/* .leaflet-container in these selectors outranks leaflet.css, which loads after ours. */
+.drive-map.leaflet-container .leaflet-control-attribution {
   background: rgba(15, 28, 31, 0.75);
   color: var(--muted);
 }
 
-.drive-map .leaflet-control-attribution a {
+.drive-map.leaflet-container .leaflet-control-attribution a {
   color: var(--text);
 }
 
@@ -63,4 +64,38 @@
 .drive-map .leaflet-popup-tip {
   background: var(--surface);
   color: var(--text);
+}
+
+/* Dark map: OpenStreetMap's own tiles through the SVG filter #dark-map (built by js/map.js
+   from js/core/mapstyle.js). Only the tiles are filtered; the route, events and pins draw
+   on top in full colour. */
+.drive-map.leaflet-container {
+  background: var(--bg);
+}
+
+.drive-map .leaflet-tile-pane {
+  filter: url(#dark-map);
+}
+
+.drive-map .leaflet-bar {
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.drive-map .leaflet-bar a,
+.drive-map .leaflet-bar a:hover {
+  background: var(--surface);
+  color: var(--text);
+  border-bottom-color: var(--line);
+}
+
+.drive-map .leaflet-bar a.leaflet-disabled {
+  background: var(--surface);
+  color: var(--line);
+}
+
+.svg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
 }

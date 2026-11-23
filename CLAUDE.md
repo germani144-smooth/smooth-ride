@@ -63,6 +63,10 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   the origin). Keep the OSM attribution. Popups get DOM nodes, never HTML strings. What the
   map draws comes from `buildTrack` in `js/core/track.js` (same analyzer as the score).
   Browser tests stub the tile server; never hit OSM from tests.
+- The map is dark through an SVG filter (`#dark-map`, built once by `js/map.js` from the
+  numbers in `js/core/mapstyle.js`) applied to `.leaflet-tile-pane` only: never filter the
+  route or markers. Override Leaflet's CSS with `.drive-map.leaflet-container …` selectors,
+  since `leaflet.css` loads after ours.
 - Car data: ELM327 over Bluetooth Classic through Web Serial (`js/obd-serial.js`, SPP
   filter). The protocol is pure in `js/core/elm.js` (transport injected) and fuel maths in
   `js/core/car.js`; both are unit tested against the simulated clone in `tests/fake-elm.js`,

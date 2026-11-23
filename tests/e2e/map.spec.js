@@ -71,6 +71,37 @@ test("tapping a drive shows its route on a map", async ({ page }) => {
   expect(referer).toBe("http://localhost:4173/");
 });
 
+test("the map is dark: tiles filtered, controls and attribution dark", async ({ page }) => {
+  await page.getByTestId("drive").getByRole("button").first().click();
+  const map = page.getByTestId("drive-map");
+  await expect(map).toHaveClass(/leaflet-container/);
+  await expect(page.locator("filter#dark-map")).toHaveCount(1);
+  await expect(map.locator(".leaflet-tile-pane")).toHaveCSS("filter", 'url("#dark-map")');
+  await expect(map).toHaveCSS("background-color", "rgb(15, 28, 31)");
+  await expect(map.locator(".leaflet-control-attribution")).toHaveCSS(
+    "background-color",
+    "rgba(15, 28, 31, 0.75)",
+  );
+  await expect(map.locator(".leaflet-control-zoom-in")).toHaveCSS(
+    "background-color",
+    "rgb(23, 41, 45)",
+  );
+  // The route itself is not filtered.
+  const routeFilter = await map
+    .locator(".leaflet-overlay-pane")
+    .evaluate((el) => getComputedStyle(el).filter);
+  expect(routeFilter).toBe("none");
+});
+
+test("opening a second map doesn't add a second filter", async ({ page }) => {
+  await page.getByRole("button", { name: "Demo drive" }).click();
+  await expect(page.getByTestId("drive-map")).toHaveClass(/leaflet-container/);
+  const rows = page.getByTestId("drive").getByRole("button");
+  await rows.last().click();
+  await expect(page.getByTestId("drive-map")).toHaveClass(/leaflet-container/);
+  await expect(page.locator("filter#dark-map")).toHaveCount(1);
+});
+
 test("Leaflet loads from our own address", async ({ page }) => {
   const scripts = [];
   page.on("request", (r) => r.resourceType() === "script" && scripts.push(r.url()));

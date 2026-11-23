@@ -110,8 +110,8 @@ around Amager Fælled in Copenhagen (made up, not anyone's real trip) with smoot
 harsh brake, one harsh acceleration and one sharp corner, and opens it on the map. Delete it
 whenever you like.
 
-Tap a drive on the **Drives** tab to open it. Like on Strava, the route is drawn on an
-OpenStreetMap map, coloured by how smoothly you drove each stretch:
+Tap a drive on the **Drives** tab to open it. Like on Strava, the route is drawn on a dark
+map, coloured by how smoothly you drove each stretch:
 
 - **Green, smooth:** under 1 m/s² of braking or acceleration and under 1.5 m/s² sideways.
 - **Amber, firm:** noticeable, but fine.
@@ -120,6 +120,11 @@ OpenStreetMap map, coloured by how smoothly you drove each stretch:
 Red dots mark each harsh brake, amber dots harsh accelerations and purple dots sharp corners;
 tap one to see what it was. The green pin is the start, the dark pin the finish. Drag and
 pinch to move around (dragging on the map never switches tab). Tap the drive again to close it.
+
+The map is OpenStreetMap's own tiles shown through a dark filter on the phone: colours are
+inverted and turned back, then muted and tinted to the app's dark teal, with streets as
+lighter lines on dark land, water and buildings as subtle shapes, and labels kept light.
+Only the map underneath is filtered; the route and markers keep their full colours.
 
 The colours come from the same analysis as the score, so the map and the numbers agree. Map
 tiles are loaded from OpenStreetMap when you open a map (they need a connection); the
@@ -164,7 +169,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `css/layout.css`        | Header, scrolling content area, bottom tab bar, swipe between tabs                 |
 | `css/live.css`          | Live view: big numbers, Start/Stop, split-screen strip                             |
 | `css/drives.css`        | Drives list and a drive's stats                                                    |
-| `css/map.css`           | Drive map, legend, Leaflet colours                                                 |
+| `css/map.css`           | Drive map, dark tiles filter, legend, dark Leaflet controls                        |
 | `css/profile.css`       | Overall score card                                                                 |
 | `css/car.css`           | Connect car bar and Car data stats                                                 |
 | `css/settings.css`      | Settings cards                                                                     |
@@ -172,7 +177,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/version.js`         | The app version (must match `sw.js` and `package.json`)                            |
 | `js/live.js`            | Recording: GPS → analyzer → live numbers, wake lock, saving the drive              |
 | `js/drives.js`          | Drives tab: profile score, list, drive details, GPX import, demo drive             |
-| `js/map.js`             | Loads Leaflet on demand and draws a drive's route, events and pins                 |
+| `js/map.js`             | Loads Leaflet on demand, adds the dark map filter, draws route, events, pins       |
 | `js/car.js`             | Connect car button, OBD polling loop, live fuel use, rows for the drive            |
 | `js/obd-serial.js`      | Bluetooth Classic link to the ELM327 through Web Serial                            |
 | `js/swipe.js`           | Swipe gesture wiring (passive touch listeners)                                     |
@@ -182,6 +187,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/core/gpx.js`        | GPX file parser                                                                    |
 | `js/core/drives.js`     | Drive records: compact fixes, finalizing, validation, sorting                      |
 | `js/core/track.js`      | What the map draws: route coloured smooth/firm/harsh, events, bounds               |
+| `js/core/mapstyle.js`   | Dark map filter numbers: brightness curve and teal tint                            |
 | `js/core/profile.js`    | Overall score: drives weighted by distance                                         |
 | `js/core/demo.js`       | The simulated demo drive                                                           |
 | `js/core/elm.js`        | ELM327 protocol: init, reply parsing, PID decoding, polling session                |

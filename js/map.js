@@ -2,6 +2,7 @@
 // Tiles come from OpenStreetMap, the only outside address the CSP allows.
 import { buildTrack } from "./core/track.js";
 import { unpackFix } from "./core/drives.js";
+import { DARK_MAP, darkCurve, tintMatrix } from "./core/mapstyle.js";
 
 const LEAFLET = "vendor/leaflet-1.9.4/";
 const TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -13,6 +14,35 @@ const EVENT_STYLE = {
 };
 
 let leafletPromise = null;
+
+const SVG = "http://www.w3.org/2000/svg";
+
+/**
+ * Add the dark-map SVG filter to the page once (css/map.css applies it to the tiles with
+ * filter: url(#dark-map)). Built from js/core/mapstyle.js.
+ */
+function ensureDarkFilter() {
+  if (document.getElementById("dark-map")) return;
+  const node = (name, attrs = {}, children = []) => {
+    const el = document.createElementNS(SVG, name);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+    children.forEach((c) => el.appendChild(c));
+    return el;
+  };
+  const table = (values) =>
+    ["feFuncR", "feFuncG", "feFuncB"].map((f) => node(f, { type: "table", tableValues: values }));
+  const svg = node("svg", { width: 0, height: 0, "aria-hidden": "true", class: "svg-defs" }, [
+    node("filter", { id: "dark-map", "color-interpolation-filters": "sRGB" }, [
+      node("feComponentTransfer", {}, table("1 0")), // invert
+      node("feColorMatrix", { type: "hueRotate", values: 180 }),
+      node("feColorMatrix", { type: "saturate", values: DARK_MAP.saturate }),
+      node("feColorMatrix", { type: "saturate", values: 0 }), // to grey for the curve and tint
+      node("feComponentTransfer", {}, table(darkCurve().join(" "))),
+      node("feColorMatrix", { type: "matrix", values: tintMatrix().join(" ") }),
+    ]),
+  ]);
+  document.body.appendChild(svg);
+}
 
 /** Load Leaflet's CSS and script once, from our own address. */
 export function loadLeaflet() {
@@ -45,6 +75,7 @@ function popupText(text) {
 /** Draw a drive into `container`. Returns the Leaflet map (call .remove() to dispose). */
 export async function showDriveMap(container, drive) {
   const L = await loadLeaflet();
+  ensureDarkFilter();
   const track = buildTrack(drive.fixes.map(unpackFix));
   if (!track) return null;
 
