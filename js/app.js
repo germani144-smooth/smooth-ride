@@ -8,6 +8,7 @@ import { db } from "./db.js";
 import { createRecorder } from "./live.js";
 import { createDrivesView } from "./drives.js";
 import { createSwipe } from "./swipe.js";
+import { createCar } from "./car.js";
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -40,7 +41,19 @@ const drivesView = createDrivesView({
   isRecording: () => recorder.recording(),
 });
 
+// OBD-II car data through a paired Bluetooth ELM327 adapter (optional).
+const car = createCar({
+  els: {
+    button: $("#car-btn"),
+    status: $("#car-status"),
+    rpm: $("#car-rpm"),
+    metric: $('[data-testid="speed"]'),
+    metricLabel: $('[data-testid="speed-label"]'),
+  },
+});
+
 const recorder = createRecorder({
+  car,
   els: {
     toggle: $("#record-btn"),
     status: $("#record-status"),

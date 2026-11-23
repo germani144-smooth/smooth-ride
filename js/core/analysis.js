@@ -5,7 +5,7 @@
 import { distance, bearing, wrapAngle } from "./geo.js";
 
 // Bump when the scoring changes; stored drives are re-scored automatically.
-export const ANALYSIS_VERSION = 1;
+export const ANALYSIS_VERSION = 2; // 2: summaries gained car (OBD) data
 
 export const DEFAULTS = {
   maxAccuracy: 30, // m; worse fixes are ignored

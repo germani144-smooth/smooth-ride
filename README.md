@@ -61,6 +61,34 @@ The screen stays on while recording (the app must stay visible, which split scre
 The drive is saved every few seconds, so a crash or reload doesn't lose it. Tap **Stop** to
 finish; the drive appears on the **Drives** tab.
 
+### Car data (OBD-II, optional)
+
+With an ELM327 Bluetooth adapter in the car's OBD port, the app also reads the car itself,
+like Torque does:
+
+1. Pair the adapter once in Android's Bluetooth settings (PIN usually 1234 or 0000). Close
+   Torque or any other OBD app first: the adapter talks to one app at a time.
+2. Ignition on, then tap **Connect car** on the Drive tab and pick the adapter (only the
+   first time; after that it reconnects straight away).
+3. Tap **Start** as usual.
+
+While connected, the last live tile shows **fuel use** instead of speed: L/100 km while
+moving, L/h while standing still. RPM is shown under the button. Each drive recorded with
+the car connected gets a **Car data** section: L/100 km, litres used, litres burned idling,
+average and max RPM and throttle, and how much of the drive the engine was cold (under
+70 °C, when it burns more).
+
+How fuel is worked out: from the car's own fuel-rate reading when it has one, otherwise from
+the mass air flow sensor (litres per hour = grams of air per second × 3600 ÷ (14.7 × 740),
+i.e. petrol's air/fuel ratio and density). This is the same method Torque uses; it reads a
+little high when you coast in gear (the engine cuts fuel but air still flows), and it
+assumes a petrol engine. Consumption per 100 km uses the drive's GPS distance. The
+smoothness score still comes from GPS only, so drives with and without the car connected
+compare fairly.
+
+It needs Chrome on Android (Bluetooth serial arrived in Chrome 137) and a Bluetooth Classic
+adapter; Wi-Fi adapters can't be reached from a web app.
+
 ### Importing GPX
 
 **Drives → Import GPX** takes one or more GPX files from a background GPS logger. They go

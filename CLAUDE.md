@@ -63,6 +63,11 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   the origin). Keep the OSM attribution. Popups get DOM nodes, never HTML strings. What the
   map draws comes from `buildTrack` in `js/core/track.js` (same analyzer as the score).
   Browser tests stub the tile server; never hit OSM from tests.
+- Car data: ELM327 over Bluetooth Classic through Web Serial (`js/obd-serial.js`, SPP
+  filter). The protocol is pure in `js/core/elm.js` (transport injected) and fuel maths in
+  `js/core/car.js`; both are unit tested against the simulated clone in `tests/fake-elm.js`,
+  which the browser tests also inject as a fake serial port. OBD rows are stored on the
+  drive as `obd`; the score never uses them (GPS only).
 - The page is pinned to the screen (`body { position: fixed; inset: 0 }`); only `<main>`
   scrolls.
 - Live view must work in Android split screen next to Google Maps (short strip, big numbers);

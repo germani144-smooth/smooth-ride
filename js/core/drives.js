@@ -1,6 +1,7 @@
 // Drive records as stored on the phone. Fixes are kept as compact arrays
 // [t, lat, lon, speed|null, accuracy|null] to keep storage and exports small.
 import { analyzeFixes, ANALYSIS_VERSION } from "./analysis.js";
+import { summarizeCar, isValidRows } from "./car.js";
 
 export const round = (n, digits) => (n == null ? null : Number(n.toFixed(digits)));
 
@@ -26,11 +27,10 @@ export function makeDrive({ id, source, name = null, fixes = [], now = Date.now(
 
 /** (Re)compute a drive's summary with the current analysis. Returns a new record. */
 export function finalizeDrive(drive) {
-  return {
-    ...drive,
-    inProgress: false,
-    summary: analyzeFixes(drive.fixes.map(unpackFix)),
-  };
+  const summary = analyzeFixes(drive.fixes.map(unpackFix));
+  // Car (OBD) data, if an adapter was connected: fuel per GPS distance, RPM, throttle.
+  summary.car = drive.obd ? summarizeCar(drive.obd, summary.distance) : null;
+  return { ...drive, inProgress: false, summary };
 }
 
 export function needsRescore(drive) {
@@ -49,6 +49,7 @@ export function isValidDrive(d) {
     d.id.length < 100 &&
     (d.source === "live" || d.source === "gpx" || d.source === "demo") &&
     Array.isArray(d.fixes) &&
+    (d.obd == null || isValidRows(d.obd)) &&
     d.fixes.every(
       (f) =>
         Array.isArray(f) &&

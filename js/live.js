@@ -6,7 +6,7 @@ import { db } from "./db.js";
 
 const SAVE_EVERY = 10; // fixes; an in-progress drive survives a crash or reload
 
-export function createRecorder({ els, onStopped }) {
+export function createRecorder({ els, onStopped, car = null }) {
   let watchId = null;
   let wakeLock = null;
   let drive = null;
@@ -37,7 +37,8 @@ export function createRecorder({ els, onStopped }) {
     els.score.className = "metric-value " + scoreClass(l.score);
     els.jerk.textContent = fmtNumber(l.rmsJerk, 1);
     els.events.textContent = String(l.harsh);
-    els.speed.textContent = fmtSpeed(l.speed);
+    // With the car connected, that tile shows live fuel use instead (js/car.js).
+    if (!car?.showsFuel()) els.speed.textContent = fmtSpeed(l.speed);
   }
 
   function resetDisplay() {
@@ -45,7 +46,7 @@ export function createRecorder({ els, onStopped }) {
     els.score.className = "metric-value";
     els.jerk.textContent = "--";
     els.events.textContent = "0";
-    els.speed.textContent = "--";
+    if (!car?.showsFuel()) els.speed.textContent = "--";
   }
 
   async function onPosition(pos) {
@@ -67,6 +68,8 @@ export function createRecorder({ els, onStopped }) {
     render();
     if (++sinceSave >= SAVE_EVERY) {
       sinceSave = 0;
+      const rows = car?.rows();
+      if (rows?.length) drive.obd = rows;
       db.put(drive).catch(() => {});
     }
   }
@@ -90,6 +93,7 @@ export function createRecorder({ els, onStopped }) {
     analyzer = createAnalyzer();
     sinceSave = 0;
     resetDisplay();
+    car?.startCapture(); // car data, if connected now or later during the drive
     await db.put(drive);
     watchId = navigator.geolocation.watchPosition(onPosition, onError, {
       enableHighAccuracy: true,
@@ -114,6 +118,8 @@ export function createRecorder({ els, onStopped }) {
     wakeLock = null;
     els.toggle.textContent = "Start";
     els.toggle.classList.remove("recording");
+    const rows = car?.stopCapture();
+    if (rows) drive.obd = rows;
     const done = finalizeDrive(drive);
     drive = null;
     if (done.fixes.length < 2) {

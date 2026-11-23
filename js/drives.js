@@ -84,6 +84,24 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
     ]);
   }
 
+  /** Car (OBD) numbers, when an adapter was connected during the drive. */
+  function carStats(c) {
+    const pct = (x) => (x == null ? "--" : `${Math.round(x)}%`);
+    return el("div", { class: "car-stats", "data-testid": "car-stats" }, [
+      el("h3", { text: "Car data" }),
+      el("div", { class: "stats" }, [
+        stat("L/100 km", fmtNumber(c.lPer100km, 1)),
+        stat("Fuel used L", fmtNumber(c.litres, 2)),
+        stat("Idling L", fmtNumber(c.idleLitres, 2)),
+        stat("Avg rpm", c.avgRpm == null ? "--" : String(Math.round(c.avgRpm))),
+        stat("Max rpm", c.maxRpm == null ? "--" : String(Math.round(c.maxRpm))),
+        stat("Avg throttle", pct(c.avgThrottle)),
+        stat("Max throttle", pct(c.maxThrottle)),
+        stat("Cold engine", c.coldShare == null ? "--" : pct(c.coldShare * 100)),
+      ]),
+    ]);
+  }
+
   function detail(d, token) {
     const s = d.summary;
     const wrap = el("div", { class: "drive-detail", "data-testid": "drive-detail" }, [
@@ -104,6 +122,7 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
         stat("Stops /km", fmtNumber(s.stopsPerKm, 2)),
       ]),
     ]);
+    if (s.car) wrap.appendChild(carStats(s.car));
     const del = el("button", { type: "button", class: "danger", text: "Delete drive" });
     del.addEventListener("click", async () => {
       if (!window.confirm("Delete this drive?")) return;
@@ -164,7 +183,15 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
             el("span", { class: "drive-title", text: d.name || fmtDate(s.startedAt) }),
             el("span", {
               class: "drive-sub",
-              text: `${fmtDistance(s.distance)} · ${fmtDuration(s.duration)} · ${s.harsh} harsh · ${SOURCE_LABEL[d.source] || "Live"}`,
+              text: [
+                fmtDistance(s.distance),
+                fmtDuration(s.duration),
+                `${s.harsh} harsh`,
+                s.car?.lPer100km != null ? `${fmtNumber(s.car.lPer100km, 1)} L/100` : null,
+                SOURCE_LABEL[d.source] || "Live",
+              ]
+                .filter(Boolean)
+                .join(" · "),
             }),
           ]),
         ],

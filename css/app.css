@@ -566,3 +566,37 @@ textarea {
   font-size: 0.72rem;
   margin-top: 2px;
 }
+
+/* ---- Car (OBD) ---- */
+.car-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.car-bar button {
+  margin: 0;
+  flex: none;
+}
+
+.car-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The split-screen strip keeps only the numbers and Start/Stop. */
+@media (max-height: 480px) {
+  .car-bar {
+    display: none;
+  }
+}
+
+.car-stats h3 {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 4px 0 8px;
+}

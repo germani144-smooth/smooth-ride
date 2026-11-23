@@ -39,12 +39,19 @@
           </div>
           <div class="metric">
             <span class="metric-value" data-testid="speed">--</span>
-            <span class="metric-label">km/h</span>
+            <span class="metric-label" data-testid="speed-label">km/h</span>
           </div>
           <div class="control">
             <button type="button" id="record-btn" data-testid="record">Start</button>
             <span class="status" id="record-status" role="status"></span>
           </div>
+        </div>
+        <div class="car-bar" data-testid="car-bar">
+          <button type="button" id="car-btn" data-testid="car-connect">Connect car</button>
+          <span class="car-info">
+            <span class="status" id="car-status" role="status"></span>
+            <span class="status" id="car-rpm" data-testid="car-rpm"></span>
+          </span>
         </div>
         <p class="hint">
           Mount the phone, tap Start, then switch to split screen with Google Maps. The screen stays
