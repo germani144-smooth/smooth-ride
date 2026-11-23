@@ -1,0 +1,8 @@
+/* Settings tab: cards for app info and backup. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}

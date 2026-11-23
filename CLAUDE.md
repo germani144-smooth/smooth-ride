@@ -73,6 +73,18 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
 - Live view must work in Android split screen next to Google Maps (short strip, big numbers);
   the `split-screen` Playwright project checks this.
 
+## Code layout
+
+- README.md has a "Code layout" table of every file and what it does. Keep it current when
+  adding, moving or renaming a file.
+- CSS is one file per area in `css/` (base, layout, live, drives, map, profile, car,
+  settings), loaded in that order from `index.html` and listed in `PRECACHE`. Later files
+  build on earlier ones, so keep the order. Name sections by area, never by version. A new
+  area gets its own file, added in both places.
+- Use full names in code (`state`, `options`, `speed`, `accel`, `interval`), not single
+  letters, except short loop indices. Stored field names (drive summaries, compact fix and
+  OBD rows, backups) are a storage format: don't rename them without a migration.
+
 ## Before every push
 
 - `npm test` passes: Prettier check, unit tests, Playwright mobile tests.

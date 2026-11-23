@@ -1,0 +1,66 @@
+/* Drive map: route, legend and Leaflet chrome in the app's colours. */
+.drive-map-wrap {
+  margin: 0 -14px 12px;
+}
+
+.drive-map {
+  height: min(300px, 55vh);
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 8px 14px 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.key::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.key-smooth::before {
+  background: var(--accent);
+}
+
+.key-firm::before {
+  background: var(--warn);
+}
+
+.key-harsh::before {
+  background: var(--bad);
+}
+
+.key-event::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bad);
+  border: 2px solid var(--bg);
+}
+
+/* Dark-friendly Leaflet chrome */
+.drive-map .leaflet-control-attribution {
+  background: rgba(15, 28, 31, 0.75);
+  color: var(--muted);
+}
+
+.drive-map .leaflet-control-attribution a {
+  color: var(--text);
+}
+
+.drive-map .leaflet-popup-content-wrapper,
+.drive-map .leaflet-popup-tip {
+  background: var(--surface);
+  color: var(--text);
+}

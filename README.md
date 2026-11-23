@@ -150,6 +150,54 @@ don't depend on how the phone is mounted, and live drives and GPX files score th
    a map (OpenStreetMap tiles via a pinned Leaflet copy).
 2. Live comparison against your best while driving through a segment.
 
+## Code layout
+
+Plain static files, no build step. Logic that can be tested without a browser lives in
+`js/core/` (pure, unit tested); the rest of `js/` wires it to the page.
+
+| File                    | What it does                                                                       |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `index.html`            | The page: tabs, live view, Drives and Settings; CSP; loads the CSS and `js/app.js` |
+| `manifest.webmanifest`  | Installable app: name, icons, fixed id `/smooth-ride/`                             |
+| `sw.js`                 | Service worker: caches every app file per version, serves them offline             |
+| `css/base.css`          | Colours, reset, typography, buttons                                                |
+| `css/layout.css`        | Header, scrolling content area, bottom tab bar, swipe between tabs                 |
+| `css/live.css`          | Live view: big numbers, Start/Stop, split-screen strip                             |
+| `css/drives.css`        | Drives list and a drive's stats                                                    |
+| `css/map.css`           | Drive map, legend, Leaflet colours                                                 |
+| `css/profile.css`       | Overall score card                                                                 |
+| `css/car.css`           | Connect car bar and Car data stats                                                 |
+| `css/settings.css`      | Settings cards                                                                     |
+| `js/app.js`             | Starts everything: tabs, backup Export/Import, service worker updates              |
+| `js/version.js`         | The app version (must match `sw.js` and `package.json`)                            |
+| `js/live.js`            | Recording: GPS → analyzer → live numbers, wake lock, saving the drive              |
+| `js/drives.js`          | Drives tab: profile score, list, drive details, GPX import, demo drive             |
+| `js/map.js`             | Loads Leaflet on demand and draws a drive's route, events and pins                 |
+| `js/car.js`             | Connect car button, OBD polling loop, live fuel use, rows for the drive            |
+| `js/obd-serial.js`      | Bluetooth Classic link to the ELM327 through Web Serial                            |
+| `js/swipe.js`           | Swipe gesture wiring (passive touch listeners)                                     |
+| `js/db.js`              | IndexedDB storage for drives (`smooth-ride.db`)                                    |
+| `js/core/analysis.js`   | The analyzer: speed, acceleration, jerk, harsh events, score                       |
+| `js/core/geo.js`        | Distance and bearing between coordinates                                           |
+| `js/core/gpx.js`        | GPX file parser                                                                    |
+| `js/core/drives.js`     | Drive records: compact fixes, finalizing, validation, sorting                      |
+| `js/core/track.js`      | What the map draws: route coloured smooth/firm/harsh, events, bounds               |
+| `js/core/profile.js`    | Overall score: drives weighted by distance                                         |
+| `js/core/demo.js`       | The simulated demo drive                                                           |
+| `js/core/elm.js`        | ELM327 protocol: init, reply parsing, PID decoding, polling session                |
+| `js/core/car.js`        | Car data in drives: compact rows, fuel and RPM summary, live consumption           |
+| `js/core/swipe.js`      | Swipe numbers and decisions (start, cancel, follow, fade, switch)                  |
+| `js/core/format.js`     | Display formatting: distance, duration, speed, score colour                        |
+| `js/core/backup.js`     | Versioned Export/Import file format                                                |
+| `js/core/storage.js`    | Prefixed `smooth-ride.` key/value storage                                          |
+| `js/core/update.js`     | When an app update may reload the page                                             |
+| `js/core/escape.js`     | HTML escaping for user text                                                        |
+| `vendor/leaflet-1.9.4/` | Pinned, unmodified copy of Leaflet (maps)                                          |
+| `tests/unit/`           | Unit tests for `js/core/` and the repo rules (`node --test`)                       |
+| `tests/e2e/`            | Playwright browser tests on a phone and in split screen                            |
+| `tests/fake-elm.js`     | Simulated ELM327 clone, used by unit and browser tests                             |
+| `tests/server.js`       | Local static server under `/smooth-ride/`, like GitHub Pages                       |
+
 ## Development
 
 ```sh

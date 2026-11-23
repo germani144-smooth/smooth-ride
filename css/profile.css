@@ -1,0 +1,53 @@
+/* Overall score card at the top of the Drives tab. */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.profile-score {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1.8em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.profile-score.good {
+  color: var(--accent);
+}
+
+.profile-score.ok {
+  color: var(--warn);
+}
+
+.profile-score.poor {
+  color: var(--bad);
+}
+
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profile-title {
+  font-weight: 600;
+}
+
+.profile-sub {
+  font-size: 0.85rem;
+}
+
+.profile-note {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-top: 2px;
+}

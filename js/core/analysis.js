@@ -9,10 +9,10 @@ export const ANALYSIS_VERSION = 2; // 2: summaries gained car (OBD) data
 
 export const DEFAULTS = {
   maxAccuracy: 30, // m; worse fixes are ignored
-  minDt: 0.2, // s; closer fixes are skipped
+  minInterval: 0.2, // s; fixes closer together than this are skipped
   maxGap: 10, // s; longer gaps reset the kinematics (tunnel, signal loss)
-  tauSpeed: 1.5, // s; speed smoothing
-  tauAccel: 1.5, // s; acceleration smoothing
+  speedSmoothing: 1.5, // s; time constant for smoothing speed
+  accelSmoothing: 1.5, // s; time constant for smoothing acceleration
   movingSpeed: 1, // m/s; below this the car counts as stopped
   harshBrake: -2.5, // m/s²
   harshAccel: 2.0, // m/s²
@@ -26,28 +26,41 @@ export const DEFAULTS = {
  * per 10 km. Calm driving lands around 80+, aggressive driving around 30.
  */
 export function scoreFrom({ rmsJerk, rmsAccel, harshPer10km = 0 }) {
-  const x = 0.4 * rmsJerk + 0.2 * rmsAccel + 0.05 * harshPer10km;
-  return Math.max(0, Math.min(100, Math.round(100 * Math.exp(-x))));
+  const penalty = 0.4 * rmsJerk + 0.2 * rmsAccel + 0.05 * harshPer10km;
+  return Math.max(0, Math.min(100, Math.round(100 * Math.exp(-penalty))));
 }
 
-const ema = (prev, next, dt, tau) => prev + (1 - Math.exp(-dt / tau)) * (next - prev);
+/** Exponential smoothing: move `previous` toward `next` over time constant `timeConstant`. */
+const smooth = (previous, next, interval, timeConstant) =>
+  previous + (1 - Math.exp(-interval / timeConstant)) * (next - previous);
 
-export function createAnalyzer(options = {}) {
-  const o = { ...DEFAULTS, ...options };
-  const s = {
-    first: null,
-    last: null, // last accepted fix
-    v: 0,
-    a: 0,
-    lat: 0,
-    heading: null,
+/** The sample returned for a fix that only (re)starts the kinematics. */
+const restartSample = (time, speed) => ({
+  time,
+  speed,
+  accel: 0,
+  jerk: 0,
+  lateral: 0,
+  event: null,
+});
+
+export function createAnalyzer(overrides = {}) {
+  const options = { ...DEFAULTS, ...overrides };
+  const state = {
+    firstFix: null,
+    lastFix: null, // last accepted fix
+    speed: 0, // m/s, smoothed
+    accel: 0, // m/s², smoothed, along the direction of travel
+    lateral: 0, // m/s², smoothed, sideways
+    heading: null, // radians
+    speedKnown: false, // false until the first fix with a speed (or the first segment)
     kinematic: false, // false right after start or a gap
-    distance: 0,
-    movingTime: 0,
+    distance: 0, // m
+    movingTime: 0, // s
     maxSpeed: 0,
-    sumJ2: 0,
-    sumA2: 0,
-    sumL2: 0,
+    sumJerkSquared: 0, // ∫ jerk² dt while moving
+    sumAccelSquared: 0, // ∫ accel² dt while moving
+    sumLateralSquared: 0, // ∫ lateral² dt while moving
     brakeLoss: 0, // J/kg (= kJ per tonne) of kinetic energy lost while braking
     stops: 0,
     wasMoving: false,
@@ -55,18 +68,20 @@ export function createAnalyzer(options = {}) {
     eventLog: [],
     inEvent: { brake: false, accel: false, lateral: false },
     lastEventAt: { brake: -Infinity, accel: -Infinity, lateral: -Infinity },
-    window: [],
+    window: [], // recent samples for the live score
   };
 
-  function event(kind, active, release, t, lat, lon) {
-    if (active && !s.inEvent[kind] && t - s.lastEventAt[kind] >= o.eventCooldown * 1000) {
-      s.events[kind]++;
-      s.lastEventAt[kind] = t;
-      s.eventLog.push({ kind, t, lat, lon });
-      s.inEvent[kind] = true;
+  /** Count a harsh event once per manoeuvre: on entering it, with a cooldown. */
+  function detectEvent(kind, active, released, fix) {
+    const cooledDown = fix.t - state.lastEventAt[kind] >= options.eventCooldown * 1000;
+    if (active && !state.inEvent[kind] && cooledDown) {
+      state.events[kind]++;
+      state.lastEventAt[kind] = fix.t;
+      state.eventLog.push({ kind, t: fix.t, lat: fix.lat, lon: fix.lon });
+      state.inEvent[kind] = true;
       return kind;
     }
-    if (release) s.inEvent[kind] = false;
+    if (released) state.inEvent[kind] = false;
     return null;
   }
 
@@ -74,142 +89,152 @@ export function createAnalyzer(options = {}) {
   function push(fix) {
     if (!fix || !Number.isFinite(fix.lat) || !Number.isFinite(fix.lon) || !Number.isFinite(fix.t))
       return null;
-    if (fix.accuracy != null && fix.accuracy > o.maxAccuracy) return null;
+    if (fix.accuracy != null && fix.accuracy > options.maxAccuracy) return null;
     const hasSpeed = fix.speed != null && Number.isFinite(fix.speed) && fix.speed >= 0;
 
-    if (!s.last) {
-      s.first = s.last = fix;
-      s.v = hasSpeed ? fix.speed : 0;
-      s.speedKnown = hasSpeed;
-      return { t: fix.t, v: s.v, a: 0, j: 0, lat: 0, event: null };
+    if (!state.lastFix) {
+      state.firstFix = state.lastFix = fix;
+      state.speed = hasSpeed ? fix.speed : 0;
+      state.speedKnown = hasSpeed;
+      return restartSample(fix.t, state.speed);
     }
 
-    const dt = (fix.t - s.last.t) / 1000;
-    if (dt < o.minDt) return null;
-    const d = distance(s.last.lat, s.last.lon, fix.lat, fix.lon);
-    s.distance += d;
-    const rawV = hasSpeed ? fix.speed : d / dt;
+    const interval = (fix.t - state.lastFix.t) / 1000; // s
+    if (interval < options.minInterval) return null;
+    const segment = distance(state.lastFix.lat, state.lastFix.lon, fix.lat, fix.lon); // m
+    state.distance += segment;
+    const rawSpeed = hasSpeed ? fix.speed : segment / interval;
 
-    if (dt > o.maxGap || !s.speedKnown) {
+    if (interval > options.maxGap || !state.speedKnown) {
       // Signal gap, or no speed known yet (first segment of a track without speeds):
       // keep the distance, (re)start the kinematics from this segment's speed.
-      s.speedKnown = true;
-      s.v = rawV;
-      s.a = 0;
-      s.lat = 0;
-      s.heading = null;
-      s.kinematic = false;
-      s.last = fix;
-      return { t: fix.t, v: s.v, a: 0, j: 0, lat: 0, event: null };
+      state.speedKnown = true;
+      state.speed = rawSpeed;
+      state.accel = 0;
+      state.lateral = 0;
+      state.heading = null;
+      state.kinematic = false;
+      state.lastFix = fix;
+      return restartSample(fix.t, state.speed);
     }
 
-    const v = ema(s.v, rawV, dt, o.tauSpeed);
-    const aRaw = (v - s.v) / dt;
-    const a = s.kinematic ? ema(s.a, aRaw, dt, o.tauAccel) : 0;
-    const j = s.kinematic ? (a - s.a) / dt : 0;
+    const speed = smooth(state.speed, rawSpeed, interval, options.speedSmoothing);
+    const rawAccel = (speed - state.speed) / interval;
+    const accel = state.kinematic
+      ? smooth(state.accel, rawAccel, interval, options.accelSmoothing)
+      : 0;
+    const jerk = state.kinematic ? (accel - state.accel) / interval : 0;
 
     // Lateral acceleration = speed × yaw rate, from GPS heading changes.
-    let latAcc = 0;
-    if (d > 2 && v > 3) {
-      const h = bearing(s.last.lat, s.last.lon, fix.lat, fix.lon);
-      if (s.heading !== null)
-        latAcc = ema(s.lat, (v * wrapAngle(h - s.heading)) / dt, dt, o.tauAccel);
-      s.heading = h;
+    let lateral = 0;
+    if (segment > 2 && speed > 3) {
+      const heading = bearing(state.lastFix.lat, state.lastFix.lon, fix.lat, fix.lon);
+      if (state.heading !== null) {
+        const yawRate = wrapAngle(heading - state.heading) / interval;
+        lateral = smooth(state.lateral, speed * yawRate, interval, options.accelSmoothing);
+      }
+      state.heading = heading;
     }
 
-    const moving = v > o.movingSpeed;
-    if (moving && s.kinematic) {
-      s.movingTime += dt;
-      s.sumJ2 += j * j * dt;
-      s.sumA2 += a * a * dt;
-      s.sumL2 += latAcc * latAcc * dt;
+    const moving = speed > options.movingSpeed;
+    if (moving && state.kinematic) {
+      state.movingTime += interval;
+      state.sumJerkSquared += jerk * jerk * interval;
+      state.sumAccelSquared += accel * accel * interval;
+      state.sumLateralSquared += lateral * lateral * interval;
     }
-    if (a < -0.5 && v < s.v) s.brakeLoss += 0.5 * (s.v * s.v - v * v);
-    if (v > 3) s.wasMoving = true;
-    if (v < 0.8 && s.wasMoving) {
-      s.stops++;
-      s.wasMoving = false;
+    if (accel < -0.5 && speed < state.speed) {
+      state.brakeLoss += 0.5 * (state.speed * state.speed - speed * speed);
     }
-    s.maxSpeed = Math.max(s.maxSpeed, v);
+    if (speed > 3) state.wasMoving = true;
+    if (speed < 0.8 && state.wasMoving) {
+      state.stops++;
+      state.wasMoving = false;
+    }
+    state.maxSpeed = Math.max(state.maxSpeed, speed);
 
-    let ev = null;
-    if (s.kinematic) {
-      ev = event("brake", a < o.harshBrake, a > o.harshBrake * 0.6, fix.t, fix.lat, fix.lon) || ev;
-      ev = event("accel", a > o.harshAccel, a < o.harshAccel * 0.6, fix.t, fix.lat, fix.lon) || ev;
-      ev =
-        event(
+    let event = null;
+    if (state.kinematic) {
+      const { harshBrake, harshAccel, harshLateral } = options;
+      event = detectEvent("brake", accel < harshBrake, accel > harshBrake * 0.6, fix) || event;
+      event = detectEvent("accel", accel > harshAccel, accel < harshAccel * 0.6, fix) || event;
+      event =
+        detectEvent(
           "lateral",
-          Math.abs(latAcc) > o.harshLateral,
-          Math.abs(latAcc) < o.harshLateral * 0.6,
-          fix.t,
-          fix.lat,
-          fix.lon,
-        ) || ev;
+          Math.abs(lateral) > harshLateral,
+          Math.abs(lateral) < harshLateral * 0.6,
+          fix,
+        ) || event;
     }
 
-    s.window.push({ t: fix.t, dt, j, a, moving: moving && s.kinematic });
-    while (s.window.length && fix.t - s.window[0].t > o.liveWindow * 1000) s.window.shift();
+    state.window.push({ time: fix.t, interval, jerk, accel, moving: moving && state.kinematic });
+    while (state.window.length && fix.t - state.window[0].time > options.liveWindow * 1000) {
+      state.window.shift();
+    }
 
-    s.v = v;
-    s.a = a;
-    s.lat = latAcc;
-    s.last = fix;
-    s.kinematic = true;
-    return { t: fix.t, v, a, j, lat: latAcc, event: ev };
+    state.speed = speed;
+    state.accel = accel;
+    state.lateral = lateral;
+    state.lastFix = fix;
+    state.kinematic = true;
+    return { time: fix.t, speed, accel, jerk, lateral, event };
   }
 
   /** Rolling numbers for the live view (last `liveWindow` seconds). */
   function live() {
-    let time = 0;
-    let j2 = 0;
-    let a2 = 0;
-    for (const w of s.window) {
-      if (!w.moving) continue;
-      time += w.dt;
-      j2 += w.j * w.j * w.dt;
-      a2 += w.a * w.a * w.dt;
+    let movingTime = 0;
+    let sumJerkSquared = 0;
+    let sumAccelSquared = 0;
+    for (const sample of state.window) {
+      if (!sample.moving) continue;
+      movingTime += sample.interval;
+      sumJerkSquared += sample.jerk * sample.jerk * sample.interval;
+      sumAccelSquared += sample.accel * sample.accel * sample.interval;
     }
-    const rmsJerk = time > 0 ? Math.sqrt(j2 / time) : null;
-    const rmsAccel = time > 0 ? Math.sqrt(a2 / time) : null;
+    const rmsJerk = movingTime > 0 ? Math.sqrt(sumJerkSquared / movingTime) : null;
+    const rmsAccel = movingTime > 0 ? Math.sqrt(sumAccelSquared / movingTime) : null;
     return {
-      speed: s.v,
-      accel: s.a,
+      speed: state.speed,
+      accel: state.accel,
       rmsJerk,
-      score: time >= 3 ? scoreFrom({ rmsJerk, rmsAccel }) : null,
-      harsh: s.events.brake + s.events.accel + s.events.lateral,
-      distance: s.distance,
+      score: movingTime >= 3 ? scoreFrom({ rmsJerk, rmsAccel }) : null,
+      harsh: state.events.brake + state.events.accel + state.events.lateral,
+      distance: state.distance,
     };
   }
 
+  /** The whole drive so far. These field names are stored with each drive: keep them. */
   function summary() {
-    const t = s.movingTime;
-    const rmsJerk = t > 0 ? Math.sqrt(s.sumJ2 / t) : null;
-    const rmsAccel = t > 0 ? Math.sqrt(s.sumA2 / t) : null;
-    const rmsLateral = t > 0 ? Math.sqrt(s.sumL2 / t) : null;
-    const harsh = s.events.brake + s.events.accel + s.events.lateral;
-    const km = s.distance / 1000;
+    const movingTime = state.movingTime;
+    const rms = (sumSquared) => (movingTime > 0 ? Math.sqrt(sumSquared / movingTime) : null);
+    const rmsJerk = rms(state.sumJerkSquared);
+    const rmsAccel = rms(state.sumAccelSquared);
+    const rmsLateral = rms(state.sumLateralSquared);
+    const harsh = state.events.brake + state.events.accel + state.events.lateral;
+    const km = state.distance / 1000;
     const harshPer10km = km > 0 ? (harsh / km) * 10 : 0;
+    const { firstFix, lastFix } = state;
     return {
       analysisVersion: ANALYSIS_VERSION,
-      startedAt: s.first ? s.first.t : null,
-      endedAt: s.last ? s.last.t : null,
-      duration: s.first ? (s.last.t - s.first.t) / 1000 : 0,
-      distance: s.distance,
-      movingTime: t,
-      avgSpeed: t > 0 ? s.distance / t : 0,
-      maxSpeed: s.maxSpeed,
+      startedAt: firstFix ? firstFix.t : null,
+      endedAt: lastFix ? lastFix.t : null,
+      duration: firstFix ? (lastFix.t - firstFix.t) / 1000 : 0,
+      distance: state.distance,
+      movingTime,
+      avgSpeed: movingTime > 0 ? state.distance / movingTime : 0,
+      maxSpeed: state.maxSpeed,
       rmsJerk,
       rmsAccel,
       rmsLateral,
-      events: { ...s.events },
-      eventLog: s.eventLog.slice(),
+      events: { ...state.events },
+      eventLog: state.eventLog.slice(),
       harsh,
       harshPer10km,
-      brakeLossPerKm: km > 0 ? s.brakeLoss / km : 0,
-      stops: s.stops,
-      stopsPerKm: km > 0 ? s.stops / km : 0,
+      brakeLossPerKm: km > 0 ? state.brakeLoss / km : 0,
+      stops: state.stops,
+      stopsPerKm: km > 0 ? state.stops / km : 0,
       // Too short to judge: no score rather than a misleading one.
-      score: t >= 30 && km >= 0.2 ? scoreFrom({ rmsJerk, rmsAccel, harshPer10km }) : null,
+      score: movingTime >= 30 && km >= 0.2 ? scoreFrom({ rmsJerk, rmsAccel, harshPer10km }) : null,
     };
   }
 
@@ -217,8 +242,8 @@ export function createAnalyzer(options = {}) {
 }
 
 /** Analyse a whole list of fixes (GPX import, re-scoring). Same code path as live. */
-export function analyzeFixes(fixes, options) {
-  const an = createAnalyzer(options);
-  for (const f of fixes) an.push(f);
-  return an.summary();
+export function analyzeFixes(fixes, overrides) {
+  const analyzer = createAnalyzer(overrides);
+  for (const fix of fixes) analyzer.push(fix);
+  return analyzer.summary();
 }

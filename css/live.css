@@ -1,0 +1,128 @@
+/* Live view (Drive tab): big glanceable numbers and Start/Stop. */
+.live {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.metric {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-main {
+  grid-column: 1 / -1;
+}
+
+.metric-value {
+  font-size: clamp(2.5rem, 14vw, 6rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.metric-main .metric-value {
+  font-size: clamp(3.5rem, 24vw, 9rem);
+  color: var(--accent);
+}
+
+.metric-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+.metric-value.good {
+  color: var(--accent);
+}
+
+.metric-value.ok {
+  color: var(--warn);
+}
+
+.metric-value.poor {
+  color: var(--bad);
+}
+
+.control {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+#record-btn {
+  width: 100%;
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  min-height: 56px;
+  background: var(--accent);
+  color: var(--bg);
+}
+
+#record-btn.recording {
+  background: var(--bad);
+  color: var(--text);
+}
+
+.control .status {
+  text-align: center;
+  min-height: 1.2em;
+}
+
+/* Split-screen strip: one row of numbers plus a compact Start/Stop, sized from the strip
+   height and capped by its width. */
+@media (max-height: 480px) {
+  .live {
+    grid-template-columns: 1.6fr 1fr 1fr 1fr 0.9fr;
+    gap: 6px;
+    margin: 0;
+    height: 100%;
+  }
+
+  .metric-main {
+    grid-column: auto;
+  }
+
+  .metric {
+    padding: 6px;
+  }
+
+  .metric-value {
+    font-size: min(22vh, 9vw);
+  }
+
+  .metric-main .metric-value {
+    font-size: min(34vh, 14vw);
+  }
+
+  .metric-label {
+    font-size: 0.7rem;
+  }
+
+  .control {
+    grid-column: auto;
+    justify-content: center;
+  }
+
+  #record-btn {
+    min-height: 44px;
+    height: 100%;
+    font-size: 1rem;
+    padding: 4px;
+  }
+
+  .control .status {
+    display: none;
+  }
+}
