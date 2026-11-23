@@ -1,0 +1,12 @@
+# Local Claude settings
+.claude/settings.local.json
+
+# Personal data: never commit drives, tracks or exports
+*.gpx
+exports/
+smooth-ride-export-*.json
+
+# Tooling
+node_modules/
+test-results/
+playwright-report/

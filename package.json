@@ -1,0 +1,19 @@
+{
+  "name": "smooth-ride",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Smooth Ride: a personal Strava-style smooth-driving tracker (PWA).",
+  "scripts": {
+    "serve": "node tests/server.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "playwright test",
+    "test": "npm run format:check && npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "prettier": "3.10.1"
+  }
+}

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self'; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#0f1c1f" />
+    <title>Smooth Ride</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="css/app.css" />
+    <script type="module" src="js/app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <h1 class="brand">Smooth Ride</h1>
+      <span class="version" data-testid="version"></span>
+    </header>
+
+    <main>
+      <section id="view-drive" class="view" data-view="drive">
+        <div class="live" data-testid="live">
+          <div class="metric metric-main">
+            <span class="metric-value" data-testid="score">--</span>
+            <span class="metric-label">Smoothness</span>
+          </div>
+          <div class="metric">
+            <span class="metric-value" data-testid="jerk">--</span>
+            <span class="metric-label">Jerk m/s³</span>
+          </div>
+          <div class="metric">
+            <span class="metric-value" data-testid="events">0</span>
+            <span class="metric-label">Harsh</span>
+          </div>
+        </div>
+        <p class="hint">Recording comes in the next release.</p>
+      </section>
+
+      <section id="view-drives" class="view" data-view="drives" hidden>
+        <h2>Drives</h2>
+        <p class="hint">No drives yet.</p>
+      </section>
+
+      <section id="view-settings" class="view" data-view="settings" hidden>
+        <h2>Settings</h2>
+        <div class="card">
+          <h3>App</h3>
+          <p>Version <span data-testid="settings-version"></span></p>
+          <button type="button" id="check-updates">Check for updates</button>
+          <p class="status" id="update-status" role="status"></p>
+        </div>
+        <div class="card">
+          <h3>Backup</h3>
+          <p class="hint">Your data stays on this phone. Export a backup now and then.</p>
+          <button type="button" id="export-btn">Export</button>
+          <label class="button" for="import-file">Import</label>
+          <input type="file" id="import-file" accept="application/json,.json" hidden />
+          <p class="status" id="backup-status" role="status"></p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabs" aria-label="Sections">
+      <button type="button" data-tab="drive" aria-current="page">Drive</button>
+      <button type="button" data-tab="drives">Drives</button>
+      <button type="button" data-tab="settings">Settings</button>
+    </nav>
+  </body>
+</html>

@@ -1,0 +1,199 @@
+:root {
+  --bg: #0f1c1f;
+  --surface: #17292d;
+  --line: #24403f;
+  --text: #eef6f3;
+  --muted: #9bb3ad;
+  --accent: #5fe0b4;
+  --warn: #ffb547;
+  --bad: #ff6b6b;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+}
+
+.brand {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.version,
+.hint,
+.status {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+main {
+  flex: 1;
+  padding: 0 16px 16px;
+  overflow-y: auto;
+}
+
+h2 {
+  font-size: 1.1rem;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+button,
+.button {
+  display: inline-block;
+  font: inherit;
+  background: var(--line);
+  color: var(--text);
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  margin: 4px 8px 4px 0;
+}
+
+/* Live view: big glanceable numbers. */
+.live {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.metric {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-main {
+  grid-column: 1 / -1;
+}
+
+.metric-value {
+  font-size: clamp(2.5rem, 14vw, 6rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.metric-main .metric-value {
+  font-size: clamp(3.5rem, 24vw, 9rem);
+  color: var(--accent);
+}
+
+.metric-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+.tabs {
+  display: flex;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tabs button {
+  flex: 1;
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.tabs button[aria-current="page"] {
+  color: var(--accent);
+}
+
+/* Android split screen next to Google Maps: a short strip. Drop chrome, put the
+   numbers in one row and size them from the strip height. */
+@media (max-height: 480px) {
+  .topbar,
+  .hint {
+    display: none;
+  }
+
+  main {
+    padding: 6px 8px;
+  }
+
+  .live {
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 6px;
+    margin: 0;
+    height: 100%;
+  }
+
+  .metric-main {
+    grid-column: auto;
+  }
+
+  .metric {
+    padding: 6px;
+  }
+
+  .metric-value {
+    font-size: clamp(1.8rem, 22vh, 5rem);
+  }
+
+  .metric-main .metric-value {
+    font-size: clamp(2.4rem, 34vh, 7rem);
+  }
+
+  .metric-label {
+    font-size: 0.7rem;
+  }
+
+  .tabs button {
+    min-height: 32px;
+    padding: 4px;
+    font-size: 0.8rem;
+  }
+}
