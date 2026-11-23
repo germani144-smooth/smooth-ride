@@ -48,7 +48,11 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   under `vendor/` (never a CDN). Dev tools (Prettier, Playwright) are devDependencies only.
 - Core logic is pure (no DOM) in `js/core/` and has unit tests in `tests/unit/`.
   `js/app.js` is UI wiring only.
-- One analysis pipeline: live recording and imported GPX files go through the same code.
+- One analysis pipeline: live recording and imported GPX files go through the same
+  `createAnalyzer().push()` in `js/core/analysis.js`. Kinematics come from GPS only, so
+  scores don't depend on phone mounting and both sources compare fairly.
+- When scoring changes, bump `ANALYSIS_VERSION`; stored drives are re-scored on load.
+- Never reload the page for an update while a drive is recording.
 - Live view must work in Android split screen next to Google Maps (short strip, big numbers);
   the `split-screen` Playwright project checks this.
 

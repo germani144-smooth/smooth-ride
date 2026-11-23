@@ -96,7 +96,24 @@ test("reload guard: waits while typing, then reloads once", () => {
   assert.equal(reloads, 0);
   assert.equal(g.pending, true);
   active = null;
-  g.onTypingDone();
-  g.onTypingDone();
+  g.retry();
+  g.retry();
+  assert.equal(reloads, 1);
+});
+
+test("reload guard: waits while recording a drive", () => {
+  let reloads = 0;
+  let recording = true;
+  const g = createReloadGuard({
+    hadController: true,
+    reload: () => reloads++,
+    getActiveElement: () => null,
+    isBusy: () => recording,
+  });
+  g.onControllerChange();
+  g.retry();
+  assert.equal(reloads, 0);
+  recording = false;
+  g.retry();
   assert.equal(reloads, 1);
 });

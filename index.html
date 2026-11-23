@@ -27,23 +27,37 @@
         <div class="live" data-testid="live">
           <div class="metric metric-main">
             <span class="metric-value" data-testid="score">--</span>
-            <span class="metric-label">Smoothness</span>
+            <span class="metric-label">Smooth</span>
           </div>
           <div class="metric">
             <span class="metric-value" data-testid="jerk">--</span>
-            <span class="metric-label">Jerk m/s³</span>
+            <span class="metric-label">Jerk</span>
           </div>
           <div class="metric">
             <span class="metric-value" data-testid="events">0</span>
             <span class="metric-label">Harsh</span>
           </div>
+          <div class="metric">
+            <span class="metric-value" data-testid="speed">--</span>
+            <span class="metric-label">km/h</span>
+          </div>
+          <div class="control">
+            <button type="button" id="record-btn" data-testid="record">Start</button>
+            <span class="status" id="record-status" role="status"></span>
+          </div>
         </div>
-        <p class="hint">Recording comes in the next release.</p>
+        <p class="hint">
+          Mount the phone, tap Start, then switch to split screen with Google Maps. The screen stays
+          on while recording.
+        </p>
       </section>
 
       <section id="view-drives" class="view" data-view="drives" hidden>
         <h2>Drives</h2>
-        <p class="hint">No drives yet.</p>
+        <label class="button" for="gpx-file">Import GPX</label>
+        <input type="file" id="gpx-file" accept=".gpx,application/gpx+xml" multiple hidden />
+        <p class="status" id="gpx-status" role="status"></p>
+        <ul class="drive-list" id="drive-list"></ul>
       </section>
 
       <section id="view-settings" class="view" data-view="settings" hidden>

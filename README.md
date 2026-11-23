@@ -18,17 +18,56 @@ phone and choose "Install app".
 - **Updates.** The service worker keeps one cache per version (`smooth-ride-<version>`) and
   serves files cache-first. When a new version is published, the app checks on start and
   whenever you return to it, downloads the whole new version in one go, and reloads once
-  (never while you're typing). **Settings → Check for updates** checks right away.
+  (never while you're typing or recording a drive). **Settings → Check for updates** checks
+  right away.
 - **Driving next to Google Maps.** The live view is made for Android split screen: in a
   short strip it drops everything but a row of big numbers.
 - **Security.** A strict Content Security Policy allows only this app's own address and the
   OpenStreetMap tile server. No inline scripts; user and imported text is never parsed as HTML.
 
+### Recording a drive
+
+Mount the phone, tap **Start** on the Drive tab, then open Google Maps in split screen. The
+strip shows four big numbers:
+
+- **Smooth:** a 0-100 score over the last 10 seconds (green 75+, amber 50+, red below).
+- **Jerk:** how abruptly acceleration changes, RMS over the last 10 s, in m/s³. Lower is smoother.
+- **Harsh:** harsh brakes, harsh accelerations and sharp corners so far this drive.
+- **km/h:** current speed.
+
+The screen stays on while recording (the app must stay visible, which split screen does).
+The drive is saved every few seconds, so a crash or reload doesn't lose it. Tap **Stop** to
+finish; the drive appears on the **Drives** tab.
+
+### Importing GPX
+
+**Drives → Import GPX** takes one or more GPX files from a background GPS logger. They go
+through exactly the same analysis as live drives. Loggers that include speed in the GPX give
+cleaner numbers; without it, speed is worked out from the positions.
+
+### How the score is worked out
+
+All numbers come from GPS (speed and heading), not from the phone's motion sensors, so they
+don't depend on how the phone is mounted, and live drives and GPX files score the same way.
+
+- Speed and acceleration are smoothed (about 1.5 s), then **jerk** is the rate of change of
+  acceleration. **Lateral acceleration** is speed times the rate of heading change.
+- **Harsh events:** braking below -2.5 m/s², accelerating above 2.0 m/s², or cornering above
+  3.0 m/s², counted once per manoeuvre.
+- **Score** = 100 × e^-(0.4 × RMS jerk + 0.2 × RMS acceleration + 0.05 × harsh events per
+  10 km), using moving time only. Calm driving lands around 80+, aggressive around 30. Drives
+  under 30 s or 200 m get no score.
+- **Braking loss** is the kinetic energy shed while braking, in kJ per tonne per km: energy
+  you paid for in fuel and turned into brake heat. Lower is better for hypermiling.
+- Fixes less accurate than 30 m are ignored, and a gap over 10 s (a tunnel) restarts the
+  calculation without counting a fake event.
+- When the scoring changes, stored drives are re-scored automatically.
+
 ### Coming next
 
-1. Record a drive: GPS plus motion sensors, live smoothness score, jerk and harsh events.
-2. Import GPX files from a background GPS logger, analysed with the same code.
-3. Segments: pick a start and end on a recorded drive, nested segments, personal bests.
+1. Segments: pick a start and end on a recorded drive, nested segments, personal bests, with
+   a map (OpenStreetMap tiles via a pinned Leaflet copy).
+2. Live comparison against your best while driving through a segment.
 
 ## Development
 

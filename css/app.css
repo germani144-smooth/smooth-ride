@@ -180,11 +180,11 @@ button,
   }
 
   .metric-value {
-    font-size: clamp(1.8rem, 22vh, 5rem);
+    font-size: min(22vh, 9vw);
   }
 
   .metric-main .metric-value {
-    font-size: clamp(2.4rem, 34vh, 7rem);
+    font-size: min(34vh, 14vw);
   }
 
   .metric-label {
@@ -195,5 +195,168 @@ button,
     min-height: 32px;
     padding: 4px;
     font-size: 0.8rem;
+  }
+}
+
+/* ---- v0.2: recording and drives ---- */
+.live {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.metric-value.good {
+  color: var(--accent);
+}
+
+.metric-value.ok {
+  color: var(--warn);
+}
+
+.metric-value.poor {
+  color: var(--bad);
+}
+
+.control {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+#record-btn {
+  width: 100%;
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  min-height: 56px;
+  background: var(--accent);
+  color: var(--bg);
+}
+
+#record-btn.recording {
+  background: var(--bad);
+  color: var(--text);
+}
+
+.control .status {
+  text-align: center;
+  min-height: 1.2em;
+}
+
+.drive-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.drive {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.drive-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: 0;
+}
+
+.drive-score {
+  font-size: 1.6rem;
+  font-weight: 700;
+  min-width: 2.2em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.drive-score.good {
+  color: var(--accent);
+}
+
+.drive-score.ok {
+  color: var(--warn);
+}
+
+.drive-score.poor {
+  color: var(--bad);
+}
+
+.drive-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.drive-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drive-sub {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.drive-detail {
+  padding: 0 14px 12px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+button.danger {
+  background: transparent;
+  color: var(--bad);
+  border: 1px solid var(--bad);
+}
+
+/* Split-screen strip: one row of numbers plus a compact Start/Stop. */
+@media (max-height: 480px) {
+  .live {
+    grid-template-columns: 1.6fr 1fr 1fr 1fr 0.9fr;
+  }
+
+  .control {
+    grid-column: auto;
+    justify-content: center;
+  }
+
+  #record-btn {
+    min-height: 44px;
+    height: 100%;
+    font-size: 1rem;
+    padding: 4px;
+  }
+
+  .control .status {
+    display: none;
   }
 }

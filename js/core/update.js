@@ -1,5 +1,6 @@
 // Decides when a new service worker may reload the page: once, never on the very first
-// install, and never while the user is typing (then it waits until focus leaves).
+// install, never while the user is typing (waits until focus leaves) and never while a
+// drive is being recorded (waits until the drive is stopped).
 const NON_TEXT_INPUTS = new Set([
   "button",
   "submit",
@@ -21,12 +22,17 @@ export function isTyping(el) {
   return el.isContentEditable === true;
 }
 
-export function createReloadGuard({ hadController, reload, getActiveElement }) {
+export function createReloadGuard({
+  hadController,
+  reload,
+  getActiveElement,
+  isBusy = () => false,
+}) {
   let done = false;
   let pending = false;
   const tryReload = () => {
     if (done) return false;
-    if (isTyping(getActiveElement())) {
+    if (isTyping(getActiveElement()) || isBusy()) {
       pending = true;
       return false;
     }
@@ -41,8 +47,8 @@ export function createReloadGuard({ hadController, reload, getActiveElement }) {
       if (!hadController) return false; // first install: the page is already fresh
       return tryReload();
     },
-    /** Call on focusout; performs a reload that was held back while typing. */
-    onTypingDone() {
+    /** Call when typing or recording ends; performs a reload that was held back. */
+    retry() {
       return pending ? tryReload() : false;
     },
     get pending() {

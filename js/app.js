@@ -3,6 +3,10 @@ import { VERSION } from "./version.js";
 import { createStore, memoryBackend } from "./core/storage.js";
 import { buildBackup, backupFileName, parseBackup } from "./core/backup.js";
 import { createReloadGuard } from "./core/update.js";
+import { isValidDrive, finalizeDrive } from "./core/drives.js";
+import { db } from "./db.js";
+import { createRecorder } from "./live.js";
+import { createDrivesView } from "./drives.js";
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -16,6 +20,7 @@ function localBackend() {
   }
 }
 const store = createStore(localBackend());
+let guard = null;
 
 // ---- Version ----
 document
@@ -23,6 +28,29 @@ document
   .forEach((el) => {
     el.textContent = "v" + VERSION;
   });
+
+// ---- Drives and recording ----
+const drivesView = createDrivesView({
+  list: $("#drive-list"),
+  importInput: $("#gpx-file"),
+  status: $("#gpx-status"),
+  isRecording: () => recorder.recording(),
+});
+
+const recorder = createRecorder({
+  els: {
+    toggle: $("#record-btn"),
+    status: $("#record-status"),
+    score: $('[data-testid="score"]'),
+    jerk: $('[data-testid="jerk"]'),
+    events: $('[data-testid="events"]'),
+    speed: $('[data-testid="speed"]'),
+  },
+  onStopped: () => {
+    drivesView.render();
+    guard?.retry(); // an update that arrived mid-drive can apply now
+  },
+});
 
 // ---- Tabs ----
 function showView(name) {
@@ -32,16 +60,22 @@ function showView(name) {
     else b.removeAttribute("aria-current");
   });
   store.set("ui.tab", name);
+  if (name === "drives") drivesView.render();
 }
 document
   .querySelectorAll(".tabs button")
   .forEach((b) => b.addEventListener("click", () => showView(b.dataset.tab)));
-showView(store.get("ui.tab", "drive"));
+
+drivesView
+  .repair()
+  .catch(() => {})
+  .finally(() => showView(store.get("ui.tab", "drive")));
 
 // ---- Export / Import ----
-$("#export-btn").addEventListener("click", () => {
-  const backup = buildBackup({ version: VERSION, data: { store: store.entries() } });
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+$("#export-btn").addEventListener("click", async () => {
+  const drives = (await db.all()).filter((d) => !d.inProgress);
+  const backup = buildBackup({ version: VERSION, data: { store: store.entries(), drives } });
+  const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = backupFileName();
@@ -49,7 +83,7 @@ $("#export-btn").addEventListener("click", () => {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  $("#backup-status").textContent = "Exported " + a.download;
+  $("#backup-status").textContent = `Exported ${drives.length} drives to ${a.download}`;
 });
 
 $("#import-file").addEventListener("change", async (e) => {
@@ -58,11 +92,17 @@ $("#import-file").addEventListener("change", async (e) => {
   if (!file) return;
   const status = $("#backup-status");
   try {
+    if (recorder.recording()) throw new Error("Stop the drive first.");
     const backup = parseBackup(await file.text());
+    const drives = backup.data.drives || [];
+    if (!Array.isArray(drives) || !drives.every(isValidDrive)) {
+      throw new Error("The file has damaged drive data.");
+    }
     if (!window.confirm("Replace all Smooth Ride data on this phone with this backup?")) return;
     store.clear();
     for (const [key, value] of Object.entries(backup.data.store || {})) store.set(key, value);
-    status.textContent = "Imported backup from " + backup.exportedAt.slice(0, 10);
+    await db.replaceAll(drives.map((d) => finalizeDrive({ ...d, inProgress: false })));
+    status.textContent = `Imported ${drives.length} drives from ${String(backup.exportedAt).slice(0, 10)}`;
   } catch (err) {
     status.textContent = "Import failed: " + err.message; // textContent: never parsed as HTML
   }
@@ -71,13 +111,14 @@ $("#import-file").addEventListener("change", async (e) => {
 // ---- Service worker and updates ----
 async function setupServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
-  const guard = createReloadGuard({
+  guard = createReloadGuard({
     hadController: Boolean(navigator.serviceWorker.controller),
     reload: () => window.location.reload(),
     getActiveElement: () => document.activeElement,
+    isBusy: () => recorder.recording(),
   });
   navigator.serviceWorker.addEventListener("controllerchange", () => guard.onControllerChange());
-  document.addEventListener("focusout", () => setTimeout(() => guard.onTypingDone(), 0));
+  document.addEventListener("focusout", () => setTimeout(() => guard.retry(), 0));
 
   const reg = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
   const check = () => reg.update().catch(() => {});
