@@ -1,6 +1,6 @@
 // Smooth Ride service worker. Cache-first, own scope and own caches only.
 // VERSION must match js/version.js and package.json (checked by unit tests).
-const VERSION = "0.4.0";
+const VERSION = "0.5.0";
 const PREFIX = "smooth-ride-";
 const CACHE = PREFIX + VERSION;
 
@@ -27,6 +27,16 @@ const PRECACHE = [
   "./js/drives.js",
   "./js/core/swipe.js",
   "./js/swipe.js",
+  "./js/core/track.js",
+  "./js/map.js",
+  "./vendor/leaflet-1.9.4/leaflet.js",
+  "./vendor/leaflet-1.9.4/leaflet.css",
+  "./vendor/leaflet-1.9.4/LICENSE.txt",
+  "./vendor/leaflet-1.9.4/images/layers.png",
+  "./vendor/leaflet-1.9.4/images/layers-2x.png",
+  "./vendor/leaflet-1.9.4/images/marker-icon.png",
+  "./vendor/leaflet-1.9.4/images/marker-icon-2x.png",
+  "./vendor/leaflet-1.9.4/images/marker-shadow.png",
   "./icons/icon.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

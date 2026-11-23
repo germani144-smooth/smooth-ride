@@ -16,6 +16,7 @@ const TYPES = {
   ".webmanifest": "application/manifest+json",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".txt": "text/plain; charset=utf-8",
 };
 
 createServer(async (req, res) => {

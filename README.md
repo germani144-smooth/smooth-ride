@@ -67,6 +67,24 @@ finish; the drive appears on the **Drives** tab.
 through exactly the same analysis as live drives. Loggers that include speed in the GPX give
 cleaner numbers; without it, speed is worked out from the positions.
 
+### Seeing a drive on the map
+
+Tap a drive on the **Drives** tab to open it. Like on Strava, the route is drawn on an
+OpenStreetMap map, coloured by how smoothly you drove each stretch:
+
+- **Green, smooth:** under 1 m/s² of braking or acceleration and under 1.5 m/s² sideways.
+- **Amber, firm:** noticeable, but fine.
+- **Red, harsh:** past the harsh-event limits below.
+
+Red dots mark each harsh brake, amber dots harsh accelerations and purple dots sharp corners;
+tap one to see what it was. The green pin is the start, the dark pin the finish. Drag and
+pinch to move around (dragging on the map never switches tab). Tap the drive again to close it.
+
+The colours come from the same analysis as the score, so the map and the numbers agree. Map
+tiles are loaded from OpenStreetMap when you open a map (they need a connection); the
+request carries only the app's address, never your drives, and your route itself is drawn on
+the phone.
+
 ### How the score is worked out
 
 All numbers come from GPS (speed and heading), not from the phone's motion sensors, so they

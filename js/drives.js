@@ -10,6 +10,7 @@ import {
   scoreClass,
 } from "./core/format.js";
 import { db } from "./db.js";
+import { showDriveMap } from "./map.js";
 
 const el = (tag, props = {}, children = []) => {
   const node = document.createElement(tag);
@@ -24,6 +25,41 @@ const el = (tag, props = {}, children = []) => {
 
 export function createDrivesView({ list, importInput, status, isRecording }) {
   let open = null; // id of the expanded drive
+  let map = null; // Leaflet map of the expanded drive
+  let renderToken = 0;
+
+  function disposeMap() {
+    try {
+      map?.remove();
+    } catch {
+      /* already gone */
+    }
+    map = null;
+  }
+
+  /** The map card: route coloured by smoothness, with a legend. Pans with the finger. */
+  function mapCard(d, token) {
+    const box = el("div", { class: "drive-map", "data-noswipe": "", "data-testid": "drive-map" });
+    const legend = el("div", { class: "map-legend" }, [
+      el("span", { class: "key key-smooth", text: "Smooth" }),
+      el("span", { class: "key key-firm", text: "Firm" }),
+      el("span", { class: "key key-harsh", text: "Harsh" }),
+      el("span", { class: "key key-event", text: "Harsh event" }),
+    ]);
+    const note = el("p", { class: "status" });
+    // Draw once the box is in the page, so Leaflet can measure it.
+    requestAnimationFrame(async () => {
+      if (token !== renderToken) return;
+      try {
+        const m = await showDriveMap(box, d);
+        if (token !== renderToken) m?.remove();
+        else map = m;
+      } catch (err) {
+        note.textContent = err.message;
+      }
+    });
+    return el("div", { class: "drive-map-wrap" }, [box, legend, note]);
+  }
 
   /** Finish drives left in progress by a crash or reload, and re-score old ones. */
   async function repair() {
@@ -44,9 +80,10 @@ export function createDrivesView({ list, importInput, status, isRecording }) {
     ]);
   }
 
-  function detail(d) {
+  function detail(d, token) {
     const s = d.summary;
     const wrap = el("div", { class: "drive-detail", "data-testid": "drive-detail" }, [
+      mapCard(d, token),
       el("div", { class: "stats" }, [
         stat("Distance", fmtDistance(s.distance)),
         stat("Time", fmtDuration(s.duration)),
@@ -58,7 +95,8 @@ export function createDrivesView({ list, importInput, status, isRecording }) {
         stat("Harsh accels", String(s.events.accel)),
         stat("Sharp corners", String(s.events.lateral)),
         stat("Harsh /10 km", fmtNumber(s.harshPer10km, 1)),
-        stat("Braking kJ/t per km", fmtNumber(s.brakeLossPerKm / 1000, 2)),
+        // brakeLossPerKm is J/kg per km, which is the same as kJ per tonne per km.
+        stat("Braking kJ/t per km", fmtNumber(s.brakeLossPerKm, 0)),
         stat("Stops /km", fmtNumber(s.stopsPerKm, 2)),
       ]),
     ]);
@@ -74,7 +112,10 @@ export function createDrivesView({ list, importInput, status, isRecording }) {
   }
 
   async function render() {
+    const token = ++renderToken;
     const drives = sortDrives((await db.all()).filter((d) => !d.inProgress && d.summary));
+    if (token !== renderToken) return;
+    disposeMap();
     list.replaceChildren();
     if (!drives.length) {
       list.appendChild(
@@ -107,8 +148,9 @@ export function createDrivesView({ list, importInput, status, isRecording }) {
         render();
       });
       const item = el("li", { class: "drive", "data-testid": "drive" }, [head]);
-      if (open === d.id) item.appendChild(detail(d));
+      if (open === d.id) item.appendChild(detail(d, token));
       list.appendChild(item);
+      if (open === d.id) requestAnimationFrame(() => item.scrollIntoView({ block: "nearest" }));
     }
   }
 
