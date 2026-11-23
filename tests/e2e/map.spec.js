@@ -26,9 +26,12 @@ function syntheticGpx() {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.route("https://tile.openstreetmap.org/**", (route) =>
-    route.fulfill({ status: 200, contentType: "image/png", body: TILE }),
-  );
+  // Stub both tile servers: tests never hit Stadia or OpenStreetMap.
+  for (const host of ["https://tiles.stadiamaps.com/**", "https://tile.openstreetmap.org/**"]) {
+    await page.route(host, (route) =>
+      route.fulfill({ status: 200, contentType: "image/png", body: TILE }),
+    );
+  }
   await page.addInitScript(() => {
     window.__cspViolations = [];
     document.addEventListener("securitypolicyviolation", (e) =>
@@ -52,31 +55,33 @@ test.afterEach(async ({ page }) => {
   expect(await page.evaluate(() => window.__cspViolations)).toEqual([]);
 });
 
-test("tapping a drive shows its route on a map", async ({ page }) => {
+test("tapping a drive shows its route on the dark map", async ({ page }) => {
   const tiles = [];
-  page.on("request", (r) => r.url().startsWith("https://tile.openstreetmap.org/") && tiles.push(r));
+  page.on("request", (r) => r.url().startsWith("https://tiles.stadiamaps.com/") && tiles.push(r));
   await page.getByTestId("drive").getByRole("button").first().click();
   const map = page.getByTestId("drive-map");
   await expect(map).toHaveClass(/leaflet-container/);
+  await expect(map).toHaveAttribute("data-tiles", "dark");
   // (The synthetic route runs due north, so its box is 0 px wide: count, don't "see".)
   await expect(map.locator("path.route")).not.toHaveCount(0);
   await expect(map.locator("path.route-2")).not.toHaveCount(0); // the hard stop is red
   await expect(map.locator("path.event-brake")).toHaveCount(1);
   await expect(map.locator("path.pin-start")).toHaveCount(1);
   await expect(map.locator("path.pin-end")).toHaveCount(1);
-  await expect(map.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
+  const credits = map.locator(".leaflet-control-attribution");
+  for (const c of ["Stadia Maps", "OpenMapTiles", "OpenStreetMap"])
+    await expect(credits).toContainText(c);
   await expect.poll(() => tiles.length).toBeGreaterThan(0);
-  // Only the origin goes to OpenStreetMap, never the page path.
-  const referer = await tiles[0].headerValue("referer");
-  expect(referer).toBe("http://localhost:4173/");
+  expect(tiles[0].url()).toContain("/tiles/alidade_smooth_dark/");
+  // Stadia checks our address: send only the origin, never the page path. No key.
+  expect(await tiles[0].headerValue("referer")).toBe("http://localhost:4173/");
+  expect(tiles[0].url()).not.toMatch(/key=/);
 });
 
-test("the map is dark: tiles filtered, controls and attribution dark", async ({ page }) => {
+test("controls and attribution are dark", async ({ page }) => {
   await page.getByTestId("drive").getByRole("button").first().click();
   const map = page.getByTestId("drive-map");
   await expect(map).toHaveClass(/leaflet-container/);
-  await expect(page.locator("filter#dark-map")).toHaveCount(1);
-  await expect(map.locator(".leaflet-tile-pane")).toHaveCSS("filter", 'url("#dark-map")');
   await expect(map).toHaveCSS("background-color", "rgb(15, 28, 31)");
   await expect(map.locator(".leaflet-control-attribution")).toHaveCSS(
     "background-color",
@@ -86,20 +91,28 @@ test("the map is dark: tiles filtered, controls and attribution dark", async ({ 
     "background-color",
     "rgb(23, 41, 45)",
   );
-  // The route itself is not filtered.
-  const routeFilter = await map
-    .locator(".leaflet-overlay-pane")
+  // No filter on the tiles any more: Stadia's tiles are dark by design.
+  const filter = await map
+    .locator(".leaflet-tile-pane")
     .evaluate((el) => getComputedStyle(el).filter);
-  expect(routeFilter).toBe("none");
+  expect(filter).toBe("none");
 });
 
-test("opening a second map doesn't add a second filter", async ({ page }) => {
+test("if Stadia refuses the tiles, the map switches to OpenStreetMap", async ({ page }) => {
+  // Registered last, so it wins over the stub: Stadia says "unauthorized".
+  await page.route("https://tiles.stadiamaps.com/**", (route) => route.fulfill({ status: 401 }));
+  const osm = [];
+  page.on("request", (r) => r.url().startsWith("https://tile.openstreetmap.org/") && osm.push(r));
+  await page.getByTestId("drive").getByRole("button").first().click();
+  const map = page.getByTestId("drive-map");
+  await expect(map).toHaveAttribute("data-tiles", "osm");
+  await expect.poll(() => osm.length).toBeGreaterThan(0);
+  await expect(map.locator(".leaflet-control-attribution")).not.toContainText("Stadia");
+  await expect(map.locator("path.route")).not.toHaveCount(0); // the route still draws
+
+  // The next map in this session goes straight to OpenStreetMap.
   await page.getByRole("button", { name: "Demo drive" }).click();
-  await expect(page.getByTestId("drive-map")).toHaveClass(/leaflet-container/);
-  const rows = page.getByTestId("drive").getByRole("button");
-  await rows.last().click();
-  await expect(page.getByTestId("drive-map")).toHaveClass(/leaflet-container/);
-  await expect(page.locator("filter#dark-map")).toHaveCount(1);
+  await expect(page.getByTestId("drive-map")).toHaveAttribute("data-tiles", "osm");
 });
 
 test("Leaflet loads from our own address", async ({ page }) => {

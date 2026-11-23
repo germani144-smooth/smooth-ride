@@ -1,11 +1,10 @@
 // Drive map with the pinned local Leaflet (loaded only when a map is first opened).
-// Tiles come from OpenStreetMap, the only outside address the CSP allows.
+// Tiles: Stadia Maps' dark style, falling back to plain OpenStreetMap (js/core/tiles.js).
 import { buildTrack } from "./core/track.js";
 import { unpackFix } from "./core/drives.js";
-import { DARK_MAP, darkCurve, tintMatrix } from "./core/mapstyle.js";
+import { TILE_SOURCES, createTileFallback } from "./core/tiles.js";
 
 const LEAFLET = "vendor/leaflet-1.9.4/";
-const TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const COLORS = { 0: "#5fe0b4", 1: "#ffb547", 2: "#ff6b6b" };
 const EVENT_STYLE = {
   brake: { color: "#ff6b6b", label: "Harsh braking" },
@@ -14,34 +13,38 @@ const EVENT_STYLE = {
 };
 
 let leafletPromise = null;
+// Once the dark tiles have been refused, later maps in this session go straight to OSM.
+let darkRefused = false;
 
-const SVG = "http://www.w3.org/2000/svg";
+/** A tile layer for `source`. Both providers need a referrer; send only our origin. */
+function tileLayer(L, source) {
+  return L.tileLayer(source.url, {
+    maxZoom: source.maxZoom,
+    referrerPolicy: "strict-origin-when-cross-origin",
+    attribution: source.attribution,
+    className: `tiles-${source.id}`,
+  });
+}
 
-/**
- * Add the dark-map SVG filter to the page once (css/map.css applies it to the tiles with
- * filter: url(#dark-map)). Built from js/core/mapstyle.js.
- */
-function ensureDarkFilter() {
-  if (document.getElementById("dark-map")) return;
-  const node = (name, attrs = {}, children = []) => {
-    const el = document.createElementNS(SVG, name);
-    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
-    children.forEach((c) => el.appendChild(c));
-    return el;
-  };
-  const table = (values) =>
-    ["feFuncR", "feFuncG", "feFuncB"].map((f) => node(f, { type: "table", tableValues: values }));
-  const svg = node("svg", { width: 0, height: 0, "aria-hidden": "true", class: "svg-defs" }, [
-    node("filter", { id: "dark-map", "color-interpolation-filters": "sRGB" }, [
-      node("feComponentTransfer", {}, table("1 0")), // invert
-      node("feColorMatrix", { type: "hueRotate", values: 180 }),
-      node("feColorMatrix", { type: "saturate", values: DARK_MAP.saturate }),
-      node("feColorMatrix", { type: "saturate", values: 0 }), // to grey for the curve and tint
-      node("feComponentTransfer", {}, table(darkCurve().join(" "))),
-      node("feColorMatrix", { type: "matrix", values: tintMatrix().join(" ") }),
-    ]),
-  ]);
-  document.body.appendChild(svg);
+/** Dark tiles, switching the map to OpenStreetMap if Stadia refuses them. */
+function addTiles(L, map, container) {
+  if (darkRefused) {
+    tileLayer(L, TILE_SOURCES.osm).addTo(map);
+    container.dataset.tiles = "osm";
+    return;
+  }
+  const dark = tileLayer(L, TILE_SOURCES.dark);
+  const fallback = createTileFallback();
+  dark.on("tileload", () => fallback.loaded());
+  dark.on("tileerror", () => {
+    if (!fallback.failed()) return;
+    darkRefused = true;
+    map.removeLayer(dark);
+    tileLayer(L, TILE_SOURCES.osm).addTo(map);
+    container.dataset.tiles = "osm";
+  });
+  dark.addTo(map);
+  container.dataset.tiles = "dark";
 }
 
 /** Load Leaflet's CSS and script once, from our own address. */
@@ -75,7 +78,6 @@ function popupText(text) {
 /** Draw a drive into `container`. Returns the Leaflet map (call .remove() to dispose). */
 export async function showDriveMap(container, drive) {
   const L = await loadLeaflet();
-  ensureDarkFilter();
   const track = buildTrack(drive.fixes.map(unpackFix));
   if (!track) return null;
 
@@ -85,13 +87,7 @@ export async function showDriveMap(container, drive) {
     preferCanvas: false,
   });
   map.attributionControl.setPrefix(false);
-  L.tileLayer(TILES, {
-    maxZoom: 19,
-    // OpenStreetMap requires a referrer; send only our origin, never the page path.
-    referrerPolicy: "strict-origin-when-cross-origin",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
-  }).addTo(map);
+  addTiles(L, map, container);
 
   // Dark outline under the coloured route so it reads on any tile.
   const all = track.runs.flatMap((r) => r.points);

@@ -64,11 +64,16 @@ test("manifest identity is fixed", () => {
   assert.ok(m.icons.some((i) => i.purpose === "maskable"));
 });
 
-test("CSP allows only self plus the OSM tile address", () => {
+test("CSP allows only self plus the two map tile addresses, for images only", () => {
   const html = read("index.html");
   const csp = html.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/)[1];
   const hosts = [...csp.matchAll(/https?:\/\/[^\s;]+/g)].map((m) => m[0]);
-  assert.deepEqual([...new Set(hosts)], ["https://tile.openstreetmap.org"]);
+  assert.deepEqual([...new Set(hosts)].sort(), [
+    "https://tile.openstreetmap.org",
+    "https://tiles.stadiamaps.com",
+  ]);
+  const imgSrc = csp.split(";").find((d) => d.trim().startsWith("img-src"));
+  for (const h of hosts) assert.ok(imgSrc.includes(h), `${h} outside img-src`);
   assert.match(csp, /script-src 'self';/);
   assert.doesNotMatch(csp, /unsafe-inline|unsafe-eval/);
 });

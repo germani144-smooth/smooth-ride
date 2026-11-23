@@ -26,8 +26,10 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
 
 ## Security
 
-- CSP (meta tag in `index.html`): own address (`'self'`) only, plus the OpenStreetMap tile
-  address `https://tile.openstreetmap.org` for map images. No other hosts.
+- CSP (meta tag in `index.html`): own address (`'self'`) only, plus two map tile addresses
+  in `img-src` only: `https://tiles.stadiamaps.com` (dark map) and
+  `https://tile.openstreetmap.org` (fallback). No other hosts (unit tests enforce this, and
+  that the CSP matches `TILE_HOSTS` in `js/core/tiles.js`).
 - No inline scripts, no `onclick`/inline handlers, no inline styles.
 - Escape all user or fetched text: use `textContent`; if markup must be built, use
   `escapeHtml` from `js/core/escape.js`. Never put user text into `innerHTML` unescaped.
@@ -58,15 +60,15 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   touch listeners only, no library; respect `prefers-reduced-motion`. Mark anything that pans or drags with
   the finger (map, charts) `data-noswipe`. No swiping on the live view or while recording.
 - Maps: Leaflet 1.9.4 is a verbatim copy under `vendor/leaflet-1.9.4/` (all its files are
-  precached), loaded on demand by `js/map.js`. Tiles from `https://tile.openstreetmap.org`
-  with `referrerPolicy: "strict-origin-when-cross-origin"` (OSM needs a referrer; send only
-  the origin). Keep the OSM attribution. Popups get DOM nodes, never HTML strings. What the
-  map draws comes from `buildTrack` in `js/core/track.js` (same analyzer as the score).
-  Browser tests stub the tile server; never hit OSM from tests.
-- The map is dark through an SVG filter (`#dark-map`, built once by `js/map.js` from the
-  numbers in `js/core/mapstyle.js`) applied to `.leaflet-tile-pane` only: never filter the
-  route or markers. Override Leaflet's CSS with `.drive-map.leaflet-container …` selectors,
-  since `leaflet.css` loads after ours.
+  precached), loaded on demand by `js/map.js`. Tiles: Stadia Maps "Alidade Smooth Dark",
+  authenticated by the app's domain registered in the user's Stadia account (no API key
+  anywhere), falling back to plain OpenStreetMap after 3 refused tiles with none loaded
+  (`js/core/tiles.js`). Both with `referrerPolicy: "strict-origin-when-cross-origin"`: send
+  only the origin. Keep the Stadia, OpenMapTiles and OSM attributions. No filters on tiles.
+  Popups get DOM nodes, never HTML strings. What the map draws comes from `buildTrack` in
+  `js/core/track.js` (same analyzer as the score). Override Leaflet's CSS with
+  `.drive-map.leaflet-container …` selectors, since `leaflet.css` loads after ours. Browser
+  tests stub both tile servers; never hit Stadia or OSM from tests.
 - Car data: ELM327 over Bluetooth Classic through Web Serial (`js/obd-serial.js`, SPP
   filter). The protocol is pure in `js/core/elm.js` (transport injected) and fuel maths in
   `js/core/car.js`; both are unit tested against the simulated clone in `tests/fake-elm.js`,

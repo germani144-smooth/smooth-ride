@@ -39,7 +39,9 @@ test.beforeEach(async ({ page }) => {
   page.on("pageerror", (err) => {
     throw err;
   });
-  await page.route("https://tile.openstreetmap.org/**", (r) => r.fulfill({ status: 204 }));
+  for (const host of ["https://tiles.stadiamaps.com/**", "https://tile.openstreetmap.org/**"]) {
+    await page.route(host, (r) => r.fulfill({ status: 204 }));
+  }
   await page.goto("./");
   await page.getByRole("button", { name: "Drives", exact: true }).click();
 });

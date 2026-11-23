@@ -121,15 +121,15 @@ Red dots mark each harsh brake, amber dots harsh accelerations and purple dots s
 tap one to see what it was. The green pin is the start, the dark pin the finish. Drag and
 pinch to move around (dragging on the map never switches tab). Tap the drive again to close it.
 
-The map is OpenStreetMap's own tiles shown through a dark filter on the phone: colours are
-inverted and turned back, then muted and tinted to the app's dark teal, with streets as
-lighter lines on dark land, water and buildings as subtle shapes, and labels kept light.
-Only the map underneath is filtered; the route and markers keep their full colours.
+The map is Stadia Maps' dark style (Alidade Smooth Dark, built on OpenStreetMap data). If
+Stadia ever refuses the tiles (for example if the app's address isn't registered in the
+Stadia account), the map switches to plain OpenStreetMap by itself, so it never goes blank.
 
 The colours come from the same analysis as the score, so the map and the numbers agree. Map
-tiles are loaded from OpenStreetMap when you open a map (they need a connection); the
-request carries only the app's address, never your drives, and your route itself is drawn on
-the phone.
+tiles are loaded when you open a map (they need a connection). Stadia knows the app by its
+address, so there's no key anywhere; the requests carry only that address, never your drives,
+and your route itself is drawn on the phone. Stadia's free plan (non-commercial, 200,000
+credits a month) is far more than a few drives a week need.
 
 ### How the score is worked out
 
@@ -169,7 +169,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `css/layout.css`        | Header, scrolling content area, bottom tab bar, swipe between tabs                 |
 | `css/live.css`          | Live view: big numbers, Start/Stop, split-screen strip                             |
 | `css/drives.css`        | Drives list and a drive's stats                                                    |
-| `css/map.css`           | Drive map, dark tiles filter, legend, dark Leaflet controls                        |
+| `css/map.css`           | Drive map, legend, dark Leaflet controls                                           |
 | `css/profile.css`       | Overall score card                                                                 |
 | `css/car.css`           | Connect car bar and Car data stats                                                 |
 | `css/settings.css`      | Settings cards                                                                     |
@@ -177,7 +177,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/version.js`         | The app version (must match `sw.js` and `package.json`)                            |
 | `js/live.js`            | Recording: GPS → analyzer → live numbers, wake lock, saving the drive              |
 | `js/drives.js`          | Drives tab: profile score, list, drive details, GPX import, demo drive             |
-| `js/map.js`             | Loads Leaflet on demand, adds the dark map filter, draws route, events, pins       |
+| `js/map.js`             | Loads Leaflet on demand, draws the tiles, route, events and pins                   |
 | `js/car.js`             | Connect car button, OBD polling loop, live fuel use, rows for the drive            |
 | `js/obd-serial.js`      | Bluetooth Classic link to the ELM327 through Web Serial                            |
 | `js/swipe.js`           | Swipe gesture wiring (passive touch listeners)                                     |
@@ -187,7 +187,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/core/gpx.js`        | GPX file parser                                                                    |
 | `js/core/drives.js`     | Drive records: compact fixes, finalizing, validation, sorting                      |
 | `js/core/track.js`      | What the map draws: route coloured smooth/firm/harsh, events, bounds               |
-| `js/core/mapstyle.js`   | Dark map filter numbers: brightness curve and teal tint                            |
+| `js/core/tiles.js`      | Map tile sources (Stadia dark, OpenStreetMap fallback) and when to fall back       |
 | `js/core/profile.js`    | Overall score: drives weighted by distance                                         |
 | `js/core/demo.js`       | The simulated demo drive                                                           |
 | `js/core/elm.js`        | ELM327 protocol: init, reply parsing, PID decoding, polling session                |

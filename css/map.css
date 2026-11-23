@@ -66,15 +66,10 @@
   color: var(--text);
 }
 
-/* Dark map: OpenStreetMap's own tiles through the SVG filter #dark-map (built by js/map.js
-   from js/core/mapstyle.js). Only the tiles are filtered; the route, events and pins draw
-   on top in full colour. */
+/* Dark map tiles come from Stadia Maps (js/core/tiles.js); while they load, the map shows
+   the app background. Leaflet controls in the app's dark colours. */
 .drive-map.leaflet-container {
   background: var(--bg);
-}
-
-.drive-map .leaflet-tile-pane {
-  filter: url(#dark-map);
 }
 
 .drive-map .leaflet-bar {
@@ -92,10 +87,4 @@
 .drive-map .leaflet-bar a.leaflet-disabled {
   background: var(--surface);
   color: var(--line);
-}
-
-.svg-defs {
-  position: absolute;
-  width: 0;
-  height: 0;
 }

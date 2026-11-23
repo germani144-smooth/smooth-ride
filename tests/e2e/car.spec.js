@@ -53,7 +53,9 @@ test.beforeEach(async ({ page }) => {
   page.on("pageerror", (err) => {
     throw err;
   });
-  await page.route("https://tile.openstreetmap.org/**", (r) => r.fulfill({ status: 204 }));
+  for (const host of ["https://tiles.stadiamaps.com/**", "https://tile.openstreetmap.org/**"]) {
+    await page.route(host, (r) => r.fulfill({ status: 204 }));
+  }
 });
 
 test("connects to the adapter and shows live fuel use", async ({ page }) => {
