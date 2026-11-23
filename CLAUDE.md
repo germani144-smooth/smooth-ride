@@ -1,7 +1,7 @@
 # Smooth Ride: rules for working on this repo
 
 Smooth Ride is a personal smooth-driving tracker PWA (Strava-style segments, scored on
-smoothness, not speed). Served by GitHub Pages from `main` at `https://<org>.github.io/smooth-ride/`.
+smoothness, not speed). Served by GitHub Pages from `main` at `https://germani144-smooth.github.io/smooth-ride/`.
 
 ## Scope
 

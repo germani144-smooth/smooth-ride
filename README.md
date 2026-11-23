@@ -5,7 +5,7 @@ gentle acceleration, low jerk) and, like Strava segments, keeps your personal be
 stretches of road you drive often. Built for hypermiling: smooth driving saves fuel,
 brakes and passengers' stomachs.
 
-Live: `https://<org>.github.io/smooth-ride/` (GitHub Pages from `main`). Open it on the
+Live: `https://germani144-smooth.github.io/smooth-ride/` (GitHub Pages from `main`). Open it on the
 phone and choose "Install app".
 
 ## How it works
