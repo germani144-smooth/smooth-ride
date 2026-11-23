@@ -34,6 +34,7 @@ document
 const drivesView = createDrivesView({
   list: $("#drive-list"),
   importInput: $("#gpx-file"),
+  demoButton: $("#demo-btn"),
   status: $("#gpx-status"),
   isRecording: () => recorder.recording(),
 });

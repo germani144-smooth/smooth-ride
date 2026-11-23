@@ -1,5 +1,6 @@
 // Drives tab: list, detail, delete, GPX import. Built with DOM nodes and textContent only.
 import { parseGpx } from "./core/gpx.js";
+import { demoFixes, DEMO_NAME } from "./core/demo.js";
 import { makeDrive, finalizeDrive, needsRescore, sortDrives } from "./core/drives.js";
 import {
   fmtDistance,
@@ -12,6 +13,8 @@ import {
 import { db } from "./db.js";
 import { showDriveMap } from "./map.js";
 
+const SOURCE_LABEL = { live: "Live", gpx: "GPX", demo: "Demo" };
+
 const el = (tag, props = {}, children = []) => {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) {
@@ -23,7 +26,7 @@ const el = (tag, props = {}, children = []) => {
   return node;
 };
 
-export function createDrivesView({ list, importInput, status, isRecording }) {
+export function createDrivesView({ list, importInput, demoButton, status, isRecording }) {
   let open = null; // id of the expanded drive
   let map = null; // Leaflet map of the expanded drive
   let renderToken = 0;
@@ -138,7 +141,7 @@ export function createDrivesView({ list, importInput, status, isRecording }) {
             el("span", { class: "drive-title", text: d.name || fmtDate(s.startedAt) }),
             el("span", {
               class: "drive-sub",
-              text: `${fmtDistance(s.distance)} · ${fmtDuration(s.duration)} · ${s.harsh} harsh · ${d.source === "gpx" ? "GPX" : "Live"}`,
+              text: `${fmtDistance(s.distance)} · ${fmtDuration(s.duration)} · ${s.harsh} harsh · ${SOURCE_LABEL[d.source] || "Live"}`,
             }),
           ]),
         ],
@@ -174,6 +177,17 @@ export function createDrivesView({ list, importInput, status, isRecording }) {
     status.textContent = [ok ? `Imported ${ok} drive${ok === 1 ? "" : "s"}.` : "", ...errors]
       .filter(Boolean)
       .join(" ");
+    render();
+  });
+
+  // A simulated drive to try the list and the map. Opens straight away.
+  demoButton.addEventListener("click", async () => {
+    // Place it ten minutes ago so it sorts to the top.
+    const fixes = demoFixes(Date.now() - 10 * 60 * 1000);
+    const drive = finalizeDrive(makeDrive({ source: "demo", name: DEMO_NAME, fixes }));
+    await db.put(drive);
+    open = drive.id;
+    status.textContent = "Added a simulated demo drive. Delete it any time.";
     render();
   });
 

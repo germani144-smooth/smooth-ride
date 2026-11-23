@@ -15,7 +15,7 @@ export function unpackFix(a) {
 export function makeDrive({ id, source, name = null, fixes = [], now = Date.now() }) {
   return {
     id: id || `d${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    source, // "live" | "gpx"
+    source, // "live" | "gpx" | "demo"
     name,
     createdAt: now,
     inProgress: source === "live",
@@ -47,7 +47,7 @@ export function isValidDrive(d) {
     typeof d.id === "string" &&
     d.id.length > 0 &&
     d.id.length < 100 &&
-    (d.source === "live" || d.source === "gpx") &&
+    (d.source === "live" || d.source === "gpx" || d.source === "demo") &&
     Array.isArray(d.fixes) &&
     d.fixes.every(
       (f) =>

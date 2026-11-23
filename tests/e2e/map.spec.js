@@ -129,3 +129,16 @@ test("closing the drive removes the map", async ({ page }) => {
   await row.click();
   await expect(page.getByTestId("drive-map")).toHaveCount(0);
 });
+
+test("the demo drive opens straight on the map", async ({ page }) => {
+  await page.getByRole("button", { name: "Demo drive" }).click();
+  await expect(page.locator("#gpx-status")).toContainText("demo drive");
+  const demo = page.getByTestId("drive").filter({ hasText: "Demo drive (simulated)" });
+  await expect(demo).toContainText("Demo");
+  const map = demo.getByTestId("drive-map");
+  await expect(map).toHaveClass(/leaflet-container/);
+  await expect(map.locator("path.event-brake")).toHaveCount(1);
+  await expect(map.locator("path.event-accel")).toHaveCount(1);
+  await expect(map.locator("path.event-lateral")).toHaveCount(1);
+  await expect(map.locator("path.route-0")).not.toHaveCount(0);
+});

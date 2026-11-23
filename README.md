@@ -69,6 +69,11 @@ cleaner numbers; without it, speed is worked out from the positions.
 
 ### Seeing a drive on the map
 
+To try it without driving, tap **Drives → Demo drive**: it adds a simulated 3.4 km drive
+around Amager Fælled in Copenhagen (made up, not anyone's real trip) with smooth stretches, one
+harsh brake, one harsh acceleration and one sharp corner, and opens it on the map. Delete it
+whenever you like.
+
 Tap a drive on the **Drives** tab to open it. Like on Strava, the route is drawn on an
 OpenStreetMap map, coloured by how smoothly you drove each stretch:
 
