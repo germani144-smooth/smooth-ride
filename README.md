@@ -25,6 +25,19 @@ phone and choose "Install app".
 - **Security.** A strict Content Security Policy allows only this app's own address and the
   OpenStreetMap tile server. No inline scripts; user and imported text is never parsed as HTML.
 
+### Moving between tabs
+
+Tap a tab in the bottom bar, or swipe left/right anywhere on the page to go to the next or
+previous tab. The page follows your finger and a label at the edge names the tab you're
+heading to; once it lights up (about 70 px), letting go switches tab. Shorter swipes spring
+back, and at the first or last tab the page only gives a little.
+
+Swiping never starts with two fingers, when you move more up/down than sideways (scrolling
+always wins), in fields, on the bottom bar, in dialogs, or on the map and charts. It's off on
+the live numbers and completely off while a drive is recording, so nothing switches by
+accident while driving. With "reduce motion" turned on in Android, tabs switch without the
+slide.
+
 ### Recording a drive
 
 Mount the phone, tap **Start** on the Drive tab, then open Google Maps in split screen. The

@@ -7,6 +7,7 @@ import { isValidDrive, finalizeDrive } from "./core/drives.js";
 import { db } from "./db.js";
 import { createRecorder } from "./live.js";
 import { createDrivesView } from "./drives.js";
+import { createSwipe } from "./swipe.js";
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -53,7 +54,10 @@ const recorder = createRecorder({
 });
 
 // ---- Tabs ----
+let currentTab = "drive";
+const tabButtons = () => [...document.querySelectorAll(".tabs button")];
 function showView(name) {
+  currentTab = name;
   document.querySelectorAll(".view").forEach((v) => (v.hidden = v.dataset.view !== name));
   document.querySelectorAll(".tabs button").forEach((b) => {
     if (b.dataset.tab === name) b.setAttribute("aria-current", "page");
@@ -65,6 +69,19 @@ function showView(name) {
 document
   .querySelectorAll(".tabs button")
   .forEach((b) => b.addEventListener("click", () => showView(b.dataset.tab)));
+
+// Swipe between tabs, never while recording a drive.
+createSwipe({
+  area: $("main"),
+  label: $("#swipe-label"),
+  getTabs: () => tabButtons().map((b) => b.dataset.tab),
+  getCurrent: () => currentTab,
+  getView: (name) => $(`.view[data-view="${name}"]`),
+  getTabButton: (name) => $(`.tabs button[data-tab="${name}"]`),
+  labelFor: (name) => $(`.tabs button[data-tab="${name}"]`).textContent,
+  onSwitch: (name) => showView(name),
+  isBlocked: () => recorder.recording(),
+});
 
 drivesView
   .repair()

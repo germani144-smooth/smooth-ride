@@ -24,7 +24,7 @@
 
     <main>
       <section id="view-drive" class="view" data-view="drive">
-        <div class="live" data-testid="live">
+        <div class="live" data-testid="live" data-noswipe>
           <div class="metric metric-main">
             <span class="metric-value" data-testid="score">--</span>
             <span class="metric-label">Smooth</span>
@@ -78,6 +78,8 @@
         </div>
       </section>
     </main>
+
+    <div class="swipe-label" id="swipe-label" aria-hidden="true"></div>
 
     <nav class="tabs" aria-label="Sections">
       <button type="button" data-tab="drive" aria-current="page">Drive</button>

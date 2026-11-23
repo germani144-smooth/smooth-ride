@@ -53,6 +53,11 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   scores don't depend on phone mounting and both sources compare fairly.
 - When scoring changes, bump `ANALYSIS_VERSION`; stored drives are re-scored on load.
 - Never reload the page for an update while a drive is recording.
+- Swipe between tabs (`js/swipe.js`, logic in `js/core/swipe.js`): passive touch listeners
+  only, no library; respect `prefers-reduced-motion`. Mark anything that pans or drags with
+  the finger (map, charts) `data-noswipe`. No swiping on the live view or while recording.
+- The page is pinned to the screen (`body { position: fixed; inset: 0 }`); only `<main>`
+  scrolls.
 - Live view must work in Android split screen next to Google Maps (short strip, big numbers);
   the `split-screen` Playwright project checks this.
 
