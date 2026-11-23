@@ -26,10 +26,15 @@ test("classify: starts after 10px sideways and 1.2× more sideways than vertical
   assert.equal(classify(12, 10), "horizontal");
 });
 
-test("classify: 12px vertical always cancels, even mid-swipe", () => {
+test("classify: 12px vertical cancels before a swipe starts", () => {
   assert.equal(classify(2, 12), "cancel");
-  assert.equal(classify(200, -12, "horizontal"), "cancel");
-  assert.equal(classify(200, 11, "horizontal"), "horizontal");
+  assert.equal(classify(9, -12), "cancel");
+  assert.equal(classify(2, 11), "pending");
+});
+
+test("classify: once locked sideways, vertical drift doesn't cancel", () => {
+  assert.equal(classify(200, -40, "horizontal"), "horizontal");
+  assert.equal(classify(20, 60, "horizontal"), "horizontal");
 });
 
 test("offsetFor: half the finger, small resistance at the edges", () => {

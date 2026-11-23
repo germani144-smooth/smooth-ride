@@ -2,7 +2,7 @@
 export const SWIPE = {
   startPx: 10, // horizontal distance before a swipe starts
   ratio: 1.2, // ...and it must be this much more sideways than vertical
-  cancelVerticalPx: 12, // vertical movement that cancels (scrolling always wins)
+  cancelVerticalPx: 12, // vertical movement before a swipe starts cancels it (scrolling wins)
   armPx: 70, // past this, letting go switches tab
   follow: 0.5, // the page follows the finger by this fraction
   edgeFollow: 0.15, // at the first/last tab: resistance
@@ -20,12 +20,16 @@ export function adjacentTab(tabs, current, dx) {
   return j >= 0 && j < tabs.length ? tabs[j] : null;
 }
 
-/** Gesture state after a move: "pending" (undecided), "horizontal" (swiping) or "cancel". */
+/**
+ * Gesture state after a move: "pending" (undecided), "horizontal" (swiping) or "cancel".
+ * Once a swipe has locked sideways it stays a swipe: the browser has already ruled out
+ * scrolling for this touch, and a thumb's natural arc must not cancel it halfway.
+ */
 export function classify(dx, dy, state = "pending", s = SWIPE) {
+  if (state === "horizontal") return "horizontal";
   const ax = Math.abs(dx);
   const ay = Math.abs(dy);
   if (ay >= s.cancelVerticalPx) return "cancel";
-  if (state === "horizontal") return "horizontal";
   if (ax >= s.startPx && ax >= s.ratio * ay) return "horizontal";
   return "pending";
 }

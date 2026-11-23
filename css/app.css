@@ -370,6 +370,21 @@ button.danger {
 }
 
 /* ---- v0.3: swipe between tabs ---- */
+/* A long press must not start text selection or the touch menu: Android would cancel the
+   touch and the swipe with it. Text fields still select normally. */
+main {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+main input,
+main textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .view {
   will-change: transform;
 }

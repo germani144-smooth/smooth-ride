@@ -1,16 +1,18 @@
 import { test, expect } from "@playwright/test";
 
 /** Real touch events through the Chrome DevTools protocol. */
-async function swipe(page, from, to, { steps = 12, fingers = 1 } = {}) {
+async function swipe(page, from, to, { steps = 12, fingers = 1, holdMs = 0, path = null } = {}) {
   const cdp = await page.context().newCDPSession(page);
   const points = (x, y) => Array.from({ length: fingers }, (_, i) => ({ x: x + i * 40, y, id: i }));
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchStart",
     touchPoints: points(from.x, from.y),
   });
+  if (holdMs) await page.waitForTimeout(holdMs);
   for (let i = 1; i <= steps; i++) {
-    const x = from.x + ((to.x - from.x) * i) / steps;
-    const y = from.y + ((to.y - from.y) * i) / steps;
+    const k = i / steps;
+    const x = from.x + (to.x - from.x) * k;
+    const y = path ? path(k, from, to) : from.y + (to.y - from.y) * k;
     await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: points(x, y) });
   }
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
@@ -62,11 +64,31 @@ test("swiping past the last tab does nothing", async ({ page }) => {
   await expect(current(page)).toHaveText("Settings");
 });
 
-test("vertical movement wins over a sideways swipe", async ({ page }) => {
+test("a mostly vertical movement scrolls and never switches tab", async ({ page }) => {
   await openTab(page, "Drives");
   const p = await emptySpot(page);
-  await swipe(page, p, { x: p.x - 150, y: p.y - 60 });
+  await swipe(page, p, { x: p.x - 60, y: p.y - 200 });
   await expect(current(page)).toHaveText("Drives");
+});
+
+test("a thumb arc that drifts vertically after starting still switches", async ({ page }) => {
+  await openTab(page, "Drives");
+  const p = await emptySpot(page);
+  // Sideways first, then curving 45px down: a natural one-handed swipe.
+  await swipe(
+    page,
+    p,
+    { x: p.x - 170, y: p.y + 45 },
+    { steps: 16, path: (k, a, b) => a.y + (b.y - a.y) * k * k },
+  );
+  await expect(current(page)).toHaveText("Settings");
+});
+
+test("holding the finger still first, then swiping, still switches", async ({ page }) => {
+  await openTab(page, "Drives");
+  const p = await emptySpot(page);
+  await swipe(page, p, { x: p.x - 150, y: p.y }, { holdMs: 900 });
+  await expect(current(page)).toHaveText("Settings");
 });
 
 test("two fingers never switch tab", async ({ page }) => {

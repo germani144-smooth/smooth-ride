@@ -131,6 +131,12 @@ export function createSwipe({
     { passive: true },
   );
 
+  // A long press opens the context menu, which cancels the touch. Not a touch listener, so
+  // touch handling stays passive; text fields keep their menu (copy/paste).
+  area.addEventListener("contextmenu", (e) => {
+    if (!(e.target instanceof Element && e.target.closest("input, textarea"))) e.preventDefault();
+  });
+
   area.addEventListener("touchend", finish, { passive: true });
   area.addEventListener(
     "touchcancel",
