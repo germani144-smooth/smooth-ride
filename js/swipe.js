@@ -1,12 +1,20 @@
-// Swipe between tabs. Passive touch listeners only (never blocks scrolling), no library.
-import { adjacentTab, classify, offsetFor, isArmed } from "./core/swipe.js";
+// Swipe between tabs, behaving like Lift Log's. Passive touch listeners on the whole
+// document, no library. All numbers come from js/core/swipe.js.
+import {
+  SWIPE,
+  adjacentTab,
+  classify,
+  offsetFor,
+  pageOpacity,
+  labelOpacity,
+  isArmed,
+} from "./core/swipe.js";
 
 // Places a swipe must never start from.
 const NO_SWIPE =
   "input, textarea, select, [contenteditable=''], [contenteditable='true'], [data-noswipe], .tabs, dialog, [role='dialog']";
 
 export function createSwipe({
-  area,
   label,
   getTabs,
   getCurrent,
@@ -25,77 +33,90 @@ export function createSwipe({
     return target instanceof Element && target.closest(NO_SWIPE) !== null;
   }
 
-  function paint(dx) {
-    const view = getView(getCurrent());
-    const offset = offsetFor(dx, Boolean(g.target));
-    view.style.transition = "none";
-    view.style.transform = `translateX(${offset}px)`;
-    view.style.opacity = String(1 - Math.min(0.25, Math.abs(offset) / 400));
-
-    const armed = isArmed(dx, Boolean(g.target));
-    if (g.target) {
-      label.textContent = dx < 0 ? `${labelFor(g.target)} ›` : `‹ ${labelFor(g.target)}`;
-      label.className = `swipe-label show ${dx < 0 ? "right" : "left"}${armed ? " armed" : ""}`;
-    } else {
-      label.className = "swipe-label";
-    }
+  function lightUp(armed, target) {
+    label.classList.toggle("armed", armed);
     getTabs().forEach((t) =>
-      getTabButton(t).classList.toggle("swipe-armed", armed && t === g.target),
+      getTabButton(t).classList.toggle("swipe-armed", armed && t === target),
     );
-    g.armed = armed;
   }
 
-  function clear() {
-    label.className = "swipe-label";
-    getTabs().forEach((t) => getTabButton(t).classList.remove("swipe-armed"));
+  function paint(dx) {
+    const has = Boolean(g.target);
+    const view = getView(getCurrent());
+    view.classList.remove("swipe-in");
+    view.style.transition = "none";
+    view.style.transform = `translateX(${offsetFor(dx, has)}px)`;
+    view.style.opacity = String(pageOpacity(dx, has));
+
+    if (has) {
+      label.textContent = dx < 0 ? `${labelFor(g.target)} ›` : `‹ ${labelFor(g.target)}`;
+      label.classList.toggle("right", dx < 0);
+      label.classList.toggle("left", dx > 0);
+    }
+    label.style.transition = "none";
+    label.style.opacity = String(labelOpacity(dx, has));
+    g.armed = isArmed(dx, has);
+    lightUp(g.armed, g.target);
+  }
+
+  function hideLabel(animated) {
+    label.style.transition = animated ? `opacity ${SWIPE.springMs}ms ease-out` : "none";
+    label.style.opacity = "0";
+    lightUp(false, null);
   }
 
   function springBack() {
     const view = getView(getCurrent());
-    view.style.transition = reduced.matches
-      ? "none"
-      : "transform 200ms ease-out, opacity 200ms ease-out";
+    const animated = !reduced.matches;
+    view.style.transition = animated
+      ? `transform ${SWIPE.springMs}ms ease-out, opacity ${SWIPE.springMs}ms ease-out`
+      : "none";
     view.style.transform = "";
     view.style.opacity = "";
-    clear();
+    hideLabel(animated);
+  }
+
+  function slideIn(view, dir) {
+    view.classList.remove("swipe-in");
+    // Swiping left brings the next tab in from the right, and vice versa.
+    view.style.setProperty("--swipe-from", `${dir < 0 ? SWIPE.slideInPx : -SWIPE.slideInPx}px`);
+    view.style.setProperty("--swipe-from-opacity", String(SWIPE.slideInOpacity));
+    view.style.animationDuration = `${SWIPE.slideInMs}ms`;
+    void view.offsetWidth; // restart the animation if it was still running
+    view.classList.add("swipe-in");
+    view.addEventListener("animationend", () => view.classList.remove("swipe-in"), {
+      once: true,
+    });
   }
 
   function finish() {
     if (!g) return;
     const { state, armed, target, dir } = g;
     g = null;
-    if (state === "horizontal" && armed && target) {
-      const old = getView(getCurrent());
-      old.style.transition = "none";
-      old.style.transform = "";
-      old.style.opacity = "";
-      clear();
-      onSwitch(target);
-      if (!reduced.matches) {
-        const view = getView(target);
-        // Slide in from the side the finger came from.
-        view.style.transition = "none";
-        view.style.transform = `translateX(${dir < 0 ? 40 : -40}%)`;
-        view.style.opacity = "0.6";
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => {
-            view.style.transition = "transform 220ms ease-out, opacity 220ms ease-out";
-            view.style.transform = "";
-            view.style.opacity = "";
-          }),
-        );
-      }
-    } else if (state === "horizontal") {
+    if (state !== "horizontal") return;
+    if (!(armed && target)) {
       springBack();
+      return;
     }
+    const old = getView(getCurrent());
+    old.style.transition = "none";
+    old.style.transform = "";
+    old.style.opacity = "";
+    hideLabel(false);
+    onSwitch(target);
+    if (!reduced.matches) slideIn(getView(target), dir);
   }
 
-  area.addEventListener(
+  function abort() {
+    if (g && g.state === "horizontal") springBack();
+    g = null;
+  }
+
+  document.addEventListener(
     "touchstart",
     (e) => {
       if (e.touches.length !== 1 || blockedTarget(e.target)) {
-        if (g && g.state === "horizontal") springBack();
-        g = null;
+        abort();
         return;
       }
       const t = e.touches[0];
@@ -104,13 +125,12 @@ export function createSwipe({
     { passive: true },
   );
 
-  area.addEventListener(
+  document.addEventListener(
     "touchmove",
     (e) => {
       if (!g) return;
       if (e.touches.length !== 1) {
-        if (g.state === "horizontal") springBack();
-        g = null;
+        abort();
         return;
       }
       const t = e.touches[0];
@@ -118,8 +138,7 @@ export function createSwipe({
       const dy = t.clientY - g.y;
       const next = classify(dx, dy, g.state);
       if (next === "cancel") {
-        if (g.state === "horizontal") springBack();
-        g = null;
+        abort();
         return;
       }
       g.state = next;
@@ -131,19 +150,12 @@ export function createSwipe({
     { passive: true },
   );
 
+  document.addEventListener("touchend", finish, { passive: true });
+  document.addEventListener("touchcancel", abort, { passive: true });
+
   // A long press opens the context menu, which cancels the touch. Not a touch listener, so
   // touch handling stays passive; text fields keep their menu (copy/paste).
-  area.addEventListener("contextmenu", (e) => {
+  document.addEventListener("contextmenu", (e) => {
     if (!(e.target instanceof Element && e.target.closest("input, textarea"))) e.preventDefault();
   });
-
-  area.addEventListener("touchend", finish, { passive: true });
-  area.addEventListener(
-    "touchcancel",
-    () => {
-      if (g && g.state === "horizontal") springBack();
-      g = null;
-    },
-    { passive: true },
-  );
 }

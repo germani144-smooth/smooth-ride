@@ -72,7 +72,6 @@ document
 
 // Swipe between tabs, never while recording a drive.
 createSwipe({
-  area: $("main"),
   label: $("#swipe-label"),
   getTabs: () => tabButtons().map((b) => b.dataset.tab),
   getCurrent: () => currentTab,
