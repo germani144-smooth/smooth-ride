@@ -137,7 +137,12 @@ All numbers come from GPS (speed and heading), not from the phone's motion senso
 don't depend on how the phone is mounted, and live drives and GPX files score the same way.
 
 - Speed and acceleration are smoothed (about 1.5 s), then **jerk** is the rate of change of
-  acceleration. **Lateral acceleration** is speed times the rate of heading change.
+  acceleration. **Sideways (lateral) acceleration** is speed times the rate of heading change
+  between consecutive GPS hops, smoothed more (about 2.5 s) because GPS headings jitter. A
+  hop only gives a heading when it's at least 2 m, above about 11 km/h, and at most 2.5 s
+  long; otherwise the heading is forgotten, so a turn is never compared with a direction
+  from before a slow manoeuvre or a tunnel. A sharp corner therefore needs sideways force
+  held for a couple of seconds, which is what a passenger actually feels.
 - **Harsh events:** braking below -2.5 m/s², accelerating above 2.0 m/s², or cornering above
   3.0 m/s², counted once per manoeuvre.
 - **Score** = 100 × e^-(0.4 × RMS jerk + 0.2 × RMS acceleration + 0.05 × harsh events per
@@ -145,8 +150,9 @@ don't depend on how the phone is mounted, and live drives and GPX files score th
   under 30 s or 200 m get no score.
 - **Braking loss** is the kinetic energy shed while braking, in kJ per tonne per km: energy
   you paid for in fuel and turned into brake heat. Lower is better for hypermiling.
-- Fixes less accurate than 30 m are ignored, and a gap over 10 s (a tunnel) restarts the
-  calculation without counting a fake event.
+- Fixes less accurate than 30 m are ignored. In a tunnel the GPS drops out: the gap counts
+  as distance (a straight line, so a little short on bendy tunnels), the map shows a break,
+  and the calculation restarts on the other side without counting a fake event.
 - When the scoring changes, stored drives are re-scored automatically.
 
 ### Coming next

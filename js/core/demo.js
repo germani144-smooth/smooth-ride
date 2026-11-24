@@ -18,7 +18,7 @@ const LEGS = [
   { dur: 4, v0: 18, v1: 0, turn: 0 }, // harsh brake (4.5 m/s²)
   { dur: 10, v0: 0, v1: 0, turn: 0 }, // stopped
   { dur: 18, v0: 0, v1: 12, turn: 0 }, // gentle pull-away
-  { dur: 3, v0: 12, v1: 12, turn: 60 }, // sharp corner (about 4 m/s² sideways)
+  { dur: 5, v0: 12, v1: 12, turn: 110 }, // sharp corner (about 4.6 m/s² sideways, held)
   { dur: 40, v0: 12, v1: 12, turn: -40 }, // cruise
   { dur: 20, v0: 12, v1: 8, turn: 0 }, // coasting
   { dur: 10, v0: 8, v1: 8, turn: -90 }, // calm left turn

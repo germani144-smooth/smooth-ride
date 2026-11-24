@@ -5,7 +5,7 @@
 import { distance, bearing, wrapAngle } from "./geo.js";
 
 // Bump when the scoring changes; stored drives are re-scored automatically.
-export const ANALYSIS_VERSION = 2; // 2: summaries gained car (OBD) data
+export const ANALYSIS_VERSION = 3; // 2: car (OBD) data; 3: sideways acceleration fixes
 
 export const DEFAULTS = {
   maxAccuracy: 30, // m; worse fixes are ignored
@@ -13,6 +13,8 @@ export const DEFAULTS = {
   maxGap: 10, // s; longer gaps reset the kinematics (tunnel, signal loss)
   speedSmoothing: 1.5, // s; time constant for smoothing speed
   accelSmoothing: 1.5, // s; time constant for smoothing acceleration
+  lateralSmoothing: 2.5, // s; sideways is smoothed more: GPS heading jitters on short hops
+  maxHeadingInterval: 2.5, // s; a heading over a longer hop is an average, not a direction
   movingSpeed: 1, // m/s; below this the car counts as stopped
   harshBrake: -2.5, // m/s²
   harshAccel: 2.0, // m/s²
@@ -52,7 +54,7 @@ export function createAnalyzer(overrides = {}) {
     speed: 0, // m/s, smoothed
     accel: 0, // m/s², smoothed, along the direction of travel
     lateral: 0, // m/s², smoothed, sideways
-    heading: null, // radians
+    heading: null, // radians, of the previous hop; null when that hop can't give one
     speedKnown: false, // false until the first fix with a speed (or the first segment)
     kinematic: false, // false right after start or a gap
     distance: 0, // m
@@ -125,15 +127,22 @@ export function createAnalyzer(overrides = {}) {
       : 0;
     const jerk = state.kinematic ? (accel - state.accel) / interval : 0;
 
-    // Lateral acceleration = speed × yaw rate, from GPS heading changes.
+    // Lateral acceleration = speed × yaw rate, from the heading change between two
+    // consecutive hops. Both hops must be usable: long enough to have a direction, fast
+    // enough not to be noise, and short in time (a hop across a gap averages the bend).
+    // Otherwise the heading is forgotten, so a later turn is never compared with a stale
+    // direction from minutes ago.
     let lateral = 0;
-    if (segment > 2 && speed > 3) {
+    const usableHop = segment > 2 && speed > 3 && interval <= options.maxHeadingInterval;
+    if (usableHop) {
       const heading = bearing(state.lastFix.lat, state.lastFix.lon, fix.lat, fix.lon);
       if (state.heading !== null) {
         const yawRate = wrapAngle(heading - state.heading) / interval;
-        lateral = smooth(state.lateral, speed * yawRate, interval, options.accelSmoothing);
+        lateral = smooth(state.lateral, speed * yawRate, interval, options.lateralSmoothing);
       }
       state.heading = heading;
+    } else {
+      state.heading = null;
     }
 
     const moving = speed > options.movingSpeed;

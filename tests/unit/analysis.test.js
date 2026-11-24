@@ -212,3 +212,68 @@ test("format helpers", () => {
   assert.equal(scoreClass(20), "poor");
   assert.equal(scoreClass(null), "");
 });
+
+// ---- Sideways acceleration: cases found in the first real drive (synthetic here) ----
+
+/** A path from per-second [speed m/s, heading°] pairs; t0 offsets allow gaps. */
+function pathDrive(steps, { t0 = 1_700_000_000_000, gapAt = null, gapSeconds = 0 } = {}) {
+  const fixes = [];
+  let x = 0;
+  let y = 0;
+  let t = t0;
+  const cos = Math.cos((10 * Math.PI) / 180);
+  steps.forEach(([v, hdg], i) => {
+    const step = i === gapAt ? gapSeconds : 1;
+    const h = (hdg * Math.PI) / 180;
+    x += v * step * Math.sin(h);
+    y += v * step * Math.cos(h);
+    t += step * 1000;
+    fixes.push({
+      t,
+      lat: 10 + y / M_PER_DEG,
+      lon: 20 + x / (M_PER_DEG * cos),
+      speed: v,
+      accuracy: 4,
+    });
+  });
+  return fixes;
+}
+
+test("turning slowly, then speeding up, is not a sharp corner (stale heading)", () => {
+  // Drive west at 15 m/s, slow to 2 m/s and turn 180° slowly, then pull away east.
+  const steps = [];
+  for (let i = 0; i < 20; i++) steps.push([15, -90]);
+  for (let i = 0; i < 10; i++) steps.push([15 - 1.3 * i, -90]);
+  for (let i = 0; i < 18; i++) steps.push([2, -90 + 10 * i]);
+  for (let i = 0; i < 15; i++) steps.push([2 + i, 90]);
+  assert.equal(analyzeFixes(pathDrive(steps)).events.lateral, 0);
+});
+
+test("the first seconds after a tunnel are not a sharp corner", () => {
+  // Gentle bend through a 10 s tunnel: the chord across the gap must not count as a swerve.
+  const steps = [];
+  for (let i = 0; i < 20; i++) steps.push([22, -85]);
+  steps.push([22, -100]); // the hop across the gap
+  for (let i = 0; i < 20; i++) steps.push([22, -110 - i * 1.5]);
+  const s = analyzeFixes(pathDrive(steps, { gapAt: 20, gapSeconds: 10 }));
+  assert.equal(s.events.lateral, 0);
+});
+
+test("one jittery heading in a real turn doesn't make it harsh", () => {
+  // A ~17°/s turn at 7 m/s (about 2 m/s² sideways) with one 41° jump in the middle.
+  const headings = [-113, -98, -78, -56, -35, -31, 10, 8, 16, 33, 50];
+  const steps = [];
+  for (let i = 0; i < 10; i++) steps.push([7, -113]);
+  headings.forEach((h) => steps.push([7, h]));
+  for (let i = 0; i < 10; i++) steps.push([7, 50]);
+  assert.equal(analyzeFixes(pathDrive(steps)).events.lateral, 0);
+});
+
+test("a sustained fast loop still counts as a sharp corner", () => {
+  // 20°/s at 9.5 m/s for 15 s: 3.3 m/s² sideways, held.
+  const steps = [];
+  for (let i = 0; i < 10; i++) steps.push([9.5, 0]);
+  for (let i = 1; i <= 15; i++) steps.push([9.5, 20 * i]);
+  for (let i = 0; i < 10; i++) steps.push([9.5, 300]);
+  assert.equal(analyzeFixes(pathDrive(steps)).events.lateral, 1);
+});
