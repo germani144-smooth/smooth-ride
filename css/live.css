@@ -1,78 +1,126 @@
-/* Live view (Drive tab): big glanceable numbers and Start/Stop. */
+/* Live view (Drive tab): the smoothness display with its arched bar graph, three small
+   readouts, and Start/Stop at the bottom, in thumb reach. */
+.view[data-view="drive"]:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
 .live {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
+}
+
+.live-main {
+  grid-column: 1 / -1;
+  padding: 14px 18px 14px;
+}
+
+.arch {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.arch polygon {
+  fill: var(--ghost);
+}
+
+.arch polygon.lit {
+  fill: var(--amber);
+  filter: drop-shadow(0 0 4px var(--glow));
+}
+
+.arch text {
+  fill: var(--dim);
+  font: 900 13px var(--readout);
+}
+
+/* Right-aligned like a real LCD (so "7" sits over the last ghost 8), the block centred. */
+.readout-main {
+  font-size: clamp(96px, 34vw, 150px);
+  width: max-content;
+  margin: -18% auto 0;
+}
+
+.readout-main .digits {
+  color: var(--amber);
+  --segment: var(--amber);
+  text-shadow: 0 0 18px var(--glow);
+}
+
+.lcd-caption {
+  display: flex;
+  justify-content: space-between;
+  color: var(--dim);
+  font-size: 0.9rem;
   margin-top: 8px;
 }
 
+/* Horizontal bar under the score: only in the split-screen strip, where the arch is hidden. */
+.sbar {
+  display: none;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+  margin-top: 8px;
+}
+
+.sbar i {
+  height: 10px;
+  background: var(--ghost);
+}
+
+.sbar i.lit {
+  background: var(--amber);
+}
+
 .metric {
-  background: var(--surface);
-  border-radius: 14px;
-  padding: 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  padding: 12px 12px 10px;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.metric-main {
-  grid-column: 1 / -1;
-}
-
-.metric-value {
-  font-size: clamp(2.5rem, 14vw, 6rem);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.metric-main .metric-value {
-  font-size: clamp(3.5rem, 24vw, 9rem);
-  color: var(--accent);
+.metric .readout {
+  font-size: clamp(34px, 11vw, 46px);
 }
 
 .metric-label {
-  color: var(--muted);
+  color: var(--dim);
   font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 4px;
-}
-
-.metric-value.good {
-  color: var(--accent);
-}
-
-.metric-value.ok {
-  color: var(--warn);
-}
-
-.metric-value.poor {
-  color: var(--bad);
+  margin-top: 6px;
 }
 
 .control {
-  grid-column: 1 / -1;
+  margin-top: auto;
+  padding-top: 16px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 4px;
+  gap: 6px;
+}
+
+.control .hint {
+  margin: 0 0 6px;
 }
 
 #record-btn {
   width: 100%;
   margin: 0;
+  min-height: 64px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--amber);
+  color: var(--on-red);
   font-size: 1.3rem;
   font-weight: 700;
-  min-height: 56px;
-  background: var(--accent);
-  color: var(--bg);
 }
 
 #record-btn.recording {
-  background: var(--bad);
-  color: var(--text);
+  background: var(--red);
+  color: var(--on-red);
 }
 
 .control .status {
@@ -80,45 +128,74 @@
   min-height: 1.2em;
 }
 
-/* Split-screen strip: one row of numbers plus a compact Start/Stop, sized from the strip
-   height and capped by its width. */
+/* Split-screen strip: the score with a flat bar, harsh, speed and Start/Stop in one row.
+   Jerk is left out so the digits can be big. */
 @media (max-height: 480px) {
-  .live {
-    grid-template-columns: 1.6fr 1fr 1fr 1fr 0.9fr;
-    gap: 6px;
-    margin: 0;
+  .view[data-view="drive"]:not([hidden]) {
+    display: grid;
+    grid-template-columns: 1fr 22%;
+    gap: 8px;
     height: 100%;
+    min-height: 0;
   }
 
-  .metric-main {
-    grid-column: auto;
+  /* Score on the left; harsh and speed stacked on the right, so 3 digits always fit. */
+  .live {
+    grid-template-columns: 1.3fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .live-main {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .arch,
+  .lcd-caption,
+  .metric-jerk {
+    display: none;
+  }
+
+  .sbar {
+    display: grid;
+  }
+
+  .readout-main {
+    font-size: min(30vh, 22vw);
+    margin-top: 0;
   }
 
   .metric {
-    padding: 6px;
+    justify-content: center;
+    padding: 6px 10px;
   }
 
-  .metric-value {
-    font-size: min(22vh, 9vw);
-  }
-
-  .metric-main .metric-value {
-    font-size: min(34vh, 14vw);
+  .metric .readout {
+    font-size: min(15vh, 10.5vw);
   }
 
   .metric-label {
-    font-size: 0.7rem;
+    margin-top: 4px;
   }
 
   .control {
-    grid-column: auto;
-    justify-content: center;
+    margin: 0;
+    padding: 0;
+    height: 100%;
   }
 
   #record-btn {
-    min-height: 44px;
     height: 100%;
-    font-size: 1rem;
+    min-height: 44px;
+    font-size: 1.1rem;
     padding: 4px;
   }
 

@@ -1,8 +1,9 @@
 // Live recording: GPS → analyzer → big numbers. Keeps the screen on while recording.
 import { createAnalyzer } from "./core/analysis.js";
 import { makeDrive, finalizeDrive, packFix } from "./core/drives.js";
-import { fmtSpeed, fmtNumber, scoreClass } from "./core/format.js";
+import { fmtSpeed, fmtNumber, fmtDuration } from "./core/format.js";
 import { db } from "./db.js";
+import { setReadout, setBars } from "./lcd.js";
 
 const SAVE_EVERY = 10; // fixes; an in-progress drive survives a crash or reload
 
@@ -12,8 +13,15 @@ export function createRecorder({ els, onStopped, car = null }) {
   let drive = null;
   let analyzer = null;
   let sinceSave = 0;
+  let startedAt = 0;
+  let clock = null;
 
   const recording = () => watchId !== null;
+
+  /** "Recording 12:04" in the header while a drive is recorded. */
+  function tick() {
+    els.timer.textContent = `Recording ${fmtDuration((Date.now() - startedAt) / 1000)}`;
+  }
 
   async function keepAwake() {
     try {
@@ -33,20 +41,20 @@ export function createRecorder({ els, onStopped, car = null }) {
 
   function render() {
     const l = analyzer.live();
-    els.score.textContent = l.score == null ? "--" : String(l.score);
-    els.score.className = "metric-value " + scoreClass(l.score);
-    els.jerk.textContent = fmtNumber(l.rmsJerk, 1);
-    els.events.textContent = String(l.harsh);
+    setReadout(els.score, l.score == null ? "--" : String(l.score));
+    setBars(l.score, els.arch, els.bar);
+    setReadout(els.jerk, fmtNumber(l.rmsJerk, 1));
+    setReadout(els.events, String(l.harsh), 1);
     // With the car connected, that tile shows live fuel use instead (js/car.js).
-    if (!car?.showsFuel()) els.speed.textContent = fmtSpeed(l.speed);
+    if (!car?.showsFuel()) setReadout(els.speed, fmtSpeed(l.speed), 3);
   }
 
   function resetDisplay() {
-    els.score.textContent = "--";
-    els.score.className = "metric-value";
-    els.jerk.textContent = "--";
-    els.events.textContent = "0";
-    if (!car?.showsFuel()) els.speed.textContent = "--";
+    setReadout(els.score, "--");
+    setBars(null, els.arch, els.bar);
+    setReadout(els.jerk, "--");
+    setReadout(els.events, "0", 1);
+    if (!car?.showsFuel()) setReadout(els.speed, "--", 3);
   }
 
   async function onPosition(pos) {
@@ -100,9 +108,13 @@ export function createRecorder({ els, onStopped, car = null }) {
       maximumAge: 0,
       timeout: 15000,
     });
-    els.toggle.textContent = "Stop";
+    els.toggle.textContent = "Stop drive";
     els.toggle.classList.add("recording");
     setStatus("Waiting for GPS…");
+    startedAt = Date.now();
+    tick();
+    els.timer.hidden = false;
+    clock = setInterval(tick, 1000);
     keepAwake();
   }
 
@@ -116,8 +128,11 @@ export function createRecorder({ els, onStopped, car = null }) {
       /* already released */
     }
     wakeLock = null;
-    els.toggle.textContent = "Start";
+    els.toggle.textContent = "Start drive";
     els.toggle.classList.remove("recording");
+    clearInterval(clock);
+    clock = null;
+    els.timer.hidden = true;
     const rows = car?.stopCapture();
     if (rows) drive.obd = rows;
     const done = finalizeDrive(drive);
@@ -138,6 +153,7 @@ export function createRecorder({ els, onStopped, car = null }) {
 
   els.toggle.addEventListener("click", () => (recording() ? stop() : start()));
 
+  resetDisplay();
   return { recording, stop };
 }
 

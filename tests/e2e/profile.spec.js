@@ -43,15 +43,15 @@ test.beforeEach(async ({ page }) => {
     await page.route(host, (r) => r.fulfill({ status: 204 }));
   }
   await page.goto("./");
-  await page.getByRole("button", { name: "Drives", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
 });
 
 test("no score yet, and a demo drive doesn't count", async ({ page }) => {
   const card = page.getByTestId("profile");
-  await expect(card.locator(".profile-score")).toHaveText("–");
+  await expect(card.locator(".profile-score")).toHaveText("--");
   await page.getByRole("button", { name: "Demo drive" }).click();
   await expect(page.getByTestId("drive")).toHaveCount(1);
-  await expect(card.locator(".profile-score")).toHaveText("–");
+  await expect(card.locator(".profile-score")).toHaveText("--");
 });
 
 test("the overall score weights each drive by distance", async ({ page }) => {
@@ -88,9 +88,9 @@ test("the overall score weights each drive by distance", async ({ page }) => {
 test("deleting a drive updates the overall score", async ({ page }) => {
   await importGpx(page, "a.gpx", gpx(300, 0, 0));
   const card = page.getByTestId("profile");
-  await expect(card.locator(".profile-score")).not.toHaveText("–");
+  await expect(card.locator(".profile-score")).not.toHaveText("--");
   await page.getByTestId("drive").getByRole("button").first().click();
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Delete drive" }).click();
-  await expect(card.locator(".profile-score")).toHaveText("–");
+  await expect(card.locator(".profile-score")).toHaveText("--");
 });

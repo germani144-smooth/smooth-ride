@@ -1,8 +1,8 @@
-/* Car (OBD): Connect car bar on the Drive tab and Car data in a drive's details. */
+/* Car (OBD): the Connect car bar on the Drive tab and Car data in a drive's details. */
 .car-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-top: 12px;
 }
 
@@ -18,11 +18,9 @@
 }
 
 .car-stats h3 {
-  font-size: 0.85rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin: 4px 0 8px;
+  font-size: 0.9rem;
+  color: var(--dim);
+  margin: 4px 0 0;
 }
 
 /* The split-screen strip keeps only the numbers and Start/Stop. */

@@ -1,13 +1,41 @@
-/* Base: colours, reset, typography and buttons shared by every screen. */
+/* Base: the trip-computer palette, fonts, reset, typography, buttons and the LCD readout
+   used everywhere (dot-matrix digits with the unlit segments ghosted behind them). */
+@font-face {
+  font-family: "Doto";
+  src: url("../vendor/fonts/doto-900.woff2") format("woff2");
+  font-weight: 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("../vendor/fonts/atkinson-hyperlegible-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible";
+  src: url("../vendor/fonts/atkinson-hyperlegible-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
-  --bg: #0f1c1f;
-  --surface: #17292d;
-  --line: #24403f;
-  --text: #eef6f3;
-  --muted: #9bb3ad;
-  --accent: #5fe0b4;
-  --warn: #ffb547;
-  --bad: #ff6b6b;
+  --cabin: #120e0a; /* page background: a dark, warm cabin */
+  --lcd: #1b140c; /* the display windows */
+  --ghost: #2e2213; /* unlit segments */
+  --line: #2b2116; /* hairlines and borders */
+  --amber: #ffb648; /* lit segments, the accent */
+  --glow: rgba(255, 182, 72, 0.35);
+  --text: #efe6d6;
+  --dim: #a08a6a; /* labels and secondary text */
+  --red: #ff6a4d; /* harsh, and Stop */
+  --on-red: #1a0c06;
+  --smooth: #cdbfa8; /* smooth stretches on the map: quiet, so problems stand out */
+  --smooth-cell: #4a3c2a; /* smooth stretches in a drive's strip */
+  --readout: "Doto", ui-monospace, monospace;
+  --text-font: "Atkinson Hyperlegible", system-ui, sans-serif;
   color-scheme: dark;
 }
 
@@ -22,14 +50,9 @@ body {
 }
 
 body {
-  background: var(--bg);
+  background: var(--cabin);
   color: var(--text);
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+  font-family: var(--text-font);
   display: flex;
   flex-direction: column;
   /* Pinned to the visible screen: the page itself never scrolls (no matter how the
@@ -39,15 +62,16 @@ body {
   overflow: hidden;
 }
 
-.version,
 .hint,
 .status {
-  color: var(--muted);
+  color: var(--dim);
   font-size: 0.85rem;
+  line-height: 1.4;
 }
 
 h2 {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
+  margin: 6px 0 12px;
 }
 
 h3 {
@@ -59,12 +83,85 @@ button,
 .button {
   display: inline-block;
   font: inherit;
-  background: var(--line);
+  font-size: 0.95rem;
+  background: transparent;
   color: var(--text);
-  border: 0;
-  border-radius: 10px;
-  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
   min-height: 44px;
   cursor: pointer;
   margin: 4px 8px 4px 0;
+}
+
+button:focus-visible,
+.button:focus-visible,
+input:focus-visible + .button {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+button.danger {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+/* A display window. */
+.lcd {
+  background: var(--lcd);
+  border-radius: 18px;
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* A readout: ghost 8s underneath, lit digits on top, both right-aligned so they line up.
+   Decimal points are drawn as one square dot (the font's own point is poor). */
+.readout {
+  position: relative;
+  font-family: var(--readout);
+  font-weight: 900;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.readout .ghost {
+  color: var(--ghost);
+  --segment: var(--ghost);
+}
+
+.readout .digits {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: var(--text);
+  --segment: var(--text);
+}
+
+.readout .digits.hot {
+  color: var(--amber);
+  --segment: var(--amber);
+  text-shadow: 0 0 18px var(--glow);
+}
+
+.readout .dp {
+  display: inline-block;
+  position: relative;
+  width: 0.3em;
+  color: transparent;
+}
+
+.readout .dp::after {
+  content: "";
+  position: absolute;
+  left: 0.08em;
+  bottom: 0.06em;
+  width: 0.13em;
+  height: 0.13em;
+  background: var(--segment);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

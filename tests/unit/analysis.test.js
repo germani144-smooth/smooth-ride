@@ -12,7 +12,7 @@ import {
   needsRescore,
   sortDrives,
 } from "../../js/core/drives.js";
-import { fmtDistance, fmtDuration, fmtSpeed, scoreClass } from "../../js/core/format.js";
+import { fmtDistance, fmtDuration, fmtSpeed, fmtDate } from "../../js/core/format.js";
 
 const M_PER_DEG = 111195;
 
@@ -207,10 +207,9 @@ test("format helpers", () => {
   assert.equal(fmtDuration(3725), "1:02:05");
   assert.equal(fmtDuration(65), "1:05");
   assert.equal(fmtSpeed(10), "36");
-  assert.equal(scoreClass(80), "good");
-  assert.equal(scoreClass(60), "ok");
-  assert.equal(scoreClass(20), "poor");
-  assert.equal(scoreClass(null), "");
+  const at = new Date(2026, 10, 24, 8, 28).getTime();
+  assert.equal(fmtDate(at, new Date(2026, 11, 1).getTime()), "Tue 24 Nov, 08:28");
+  assert.equal(fmtDate(at, new Date(2027, 0, 5).getTime()), "Tue 24 Nov 2026, 08:28");
 });
 
 // ---- Sideways acceleration: cases found in the first real drive (synthetic here) ----

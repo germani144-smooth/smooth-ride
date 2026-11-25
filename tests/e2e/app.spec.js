@@ -23,10 +23,46 @@ test.afterEach(async ({ page }) => {
   expect(violations).toEqual([]);
 });
 
-test("shows the version and the live view", async ({ page }) => {
+test("the cog opens Settings with the version, and tapping it again goes back", async ({
+  page,
+}) => {
   await page.goto("./");
-  await expect(page.getByTestId("version")).toHaveText("v" + VERSION);
   await expect(page.getByTestId("score")).toBeVisible();
+  const cog = page.getByRole("button", { name: "Settings" });
+  test.skip(!(await cog.isVisible()), "the split-screen strip hides the header and its cog");
+  await cog.click();
+  await expect(page.getByTestId("version")).toBeVisible();
+  await expect(page.getByTestId("version")).toHaveText(VERSION);
+  await expect(cog).toHaveAttribute("aria-current", "page");
+  await expect(page.locator(".tabs button[aria-current='page']")).toHaveCount(0);
+  await cog.click();
+  await expect(page.getByTestId("score")).toBeVisible();
+  await expect(page.locator(".tabs button[aria-current='page']")).toHaveText("Drive");
+});
+
+test("two tabs, Drive and History; the old Drives tab opens as History", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("smooth-ride.ui.tab", '"drives"'));
+  await page.goto("./");
+  await expect(page.locator(".tabs button")).toHaveText(["Drive", "History"]);
+  await expect(page.locator(".tabs button[aria-current='page']")).toHaveText("History");
+  await expect(page.getByRole("heading", { name: "History" })).toBeVisible();
+});
+
+test("readouts show ghost 8s behind the digits; fonts come from our own address", async ({
+  page,
+}) => {
+  const fonts = [];
+  page.on("request", (r) => r.resourceType() === "font" && fonts.push(r.url()));
+  await page.goto("./");
+  await page.evaluate(() => document.fonts.ready);
+  const speed = page.getByTestId("speed");
+  await expect(speed).toHaveText("--");
+  await expect(speed.locator("xpath=..").locator(".ghost")).toHaveText("888");
+  expect(fonts.length).toBeGreaterThan(0);
+  expect(fonts.every((u) => u.startsWith("http://localhost:4173/smooth-ride/vendor/fonts/"))).toBe(
+    true,
+  );
+  expect(await page.evaluate(() => document.fonts.check('900 40px "Doto"'))).toBe(true);
 });
 
 test("live numbers fit without scrolling", async ({ page }) => {
@@ -44,7 +80,7 @@ test("service worker installs its own cache and works offline", async ({ page, c
   expect(keys).toEqual(["smooth-ride-" + VERSION]);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByTestId("version")).toHaveText("v" + VERSION);
+  await expect(page.getByTestId("version")).toHaveText(VERSION);
   await context.setOffline(false);
 });
 
@@ -57,6 +93,10 @@ test("manifest is linked and has a fixed id", async ({ page }) => {
 
 test("export then import restores data", async ({ page }) => {
   await page.goto("./");
+  test.skip(
+    !(await page.getByRole("button", { name: "Settings" }).isVisible()),
+    "Settings is reached with the cog, which the split-screen strip hides",
+  );
   await page.getByRole("button", { name: "Settings" }).click();
   await page.evaluate(() => localStorage.setItem("smooth-ride.test", JSON.stringify({ a: 1 })));
 
@@ -76,6 +116,10 @@ test("export then import restores data", async ({ page }) => {
 
 test("import rejects a foreign file and shows the message as text", async ({ page }) => {
   await page.goto("./");
+  test.skip(
+    !(await page.getByRole("button", { name: "Settings" }).isVisible()),
+    "Settings is reached with the cog, which the split-screen strip hides",
+  );
   await page.getByRole("button", { name: "Settings" }).click();
   await page.locator("#import-file").setInputFiles({
     name: "x.json",

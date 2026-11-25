@@ -113,7 +113,7 @@ test("a recorded drive keeps the car data", async ({ page, context }) => {
   await page.getByTestId("record").click();
   await expect(page.locator("#record-status")).toContainText("Saved");
 
-  await page.getByRole("button", { name: "Drives", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await page.getByTestId("drive").getByRole("button").first().click();
   const car = page.getByTestId("car-stats");
   await expect(car).toBeVisible();

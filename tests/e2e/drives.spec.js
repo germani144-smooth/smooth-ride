@@ -48,7 +48,11 @@ test("records a drive from GPS and lists it", async ({ page, context }) => {
   await context.setGeolocation(BASE);
   await page.goto("./");
   await page.getByTestId("record").click();
-  await expect(page.getByTestId("record")).toHaveText("Stop");
+  await expect(page.getByTestId("record")).toHaveText("Stop drive");
+  // The header shows how long the drive has been recording.
+  if (await page.locator(".topbar").isVisible()) {
+    await expect(page.getByTestId("rec-timer")).toHaveText(/^Recording 0:0\d$/);
+  }
 
   for (let i = 1; i <= 8; i++) {
     await page.waitForTimeout(350);
@@ -59,17 +63,18 @@ test("records a drive from GPS and lists it", async ({ page, context }) => {
   }
   await expect(page.getByTestId("speed")).not.toHaveText("--");
   await page.getByTestId("record").click();
-  await expect(page.getByTestId("record")).toHaveText("Start");
+  await expect(page.getByTestId("record")).toHaveText("Start drive");
   await expect(page.locator("#record-status")).toContainText("Saved");
+  await expect(page.getByTestId("rec-timer")).toBeHidden();
 
-  await page.getByRole("button", { name: "Drives", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByTestId("drive")).toHaveCount(1);
   await expect(page.getByTestId("drive")).toContainText("Live");
 });
 
 test("imports a GPX, shows its stats, deletes it", async ({ page }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Drives", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await page.locator("#gpx-file").setInputFiles({
     name: "test.gpx",
     mimeType: "application/gpx+xml",
@@ -97,7 +102,7 @@ test("imports a GPX, shows its stats, deletes it", async ({ page }) => {
 
 test("a broken GPX shows an error and imports nothing", async ({ page }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Drives", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await page.locator("#gpx-file").setInputFiles({
     name: "bad.gpx",
     mimeType: "application/gpx+xml",
@@ -109,7 +114,7 @@ test("a broken GPX shows an error and imports nothing", async ({ page }) => {
 
 test("backup round-trips drives", async ({ page }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Drives", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await page.locator("#gpx-file").setInputFiles({
     name: "test.gpx",
     mimeType: "application/gpx+xml",
@@ -117,6 +122,10 @@ test("backup round-trips drives", async ({ page }) => {
   });
   await expect(page.getByTestId("drive")).toHaveCount(1);
 
+  test.skip(
+    !(await page.getByRole("button", { name: "Settings" }).isVisible()),
+    "Settings is reached with the cog, which the split-screen strip hides",
+  );
   await page.getByRole("button", { name: "Settings" }).click();
   const dl = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export" }).click();
@@ -138,6 +147,24 @@ test("backup round-trips drives", async ({ page }) => {
   page.once("dialog", (d) => d.accept());
   await page.locator("#import-file").setInputFiles(path);
   await expect(page.locator("#backup-status")).toContainText("Imported 1 drives");
-  await page.getByRole("button", { name: "Drives", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByTestId("drive")).toHaveCount(1);
+});
+
+test("each drive in History has a strip showing where it went firm or harsh", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  await page.locator("#gpx-file").setInputFiles({
+    name: "test.gpx",
+    mimeType: "application/gpx+xml",
+    buffer: Buffer.from(syntheticGpx()),
+  });
+  const ribbon = page.getByTestId("drive").getByTestId("ribbon");
+  await expect(ribbon.locator("i")).toHaveCount(60);
+  // The synthetic drive cruises, then stops hard at the end: harsh only near the end.
+  await expect(ribbon.locator("i.r2")).not.toHaveCount(0);
+  const firstHarsh = await ribbon
+    .locator("i")
+    .evaluateAll((cells) => cells.findIndex((c) => c.classList.contains("r2")));
+  expect(firstHarsh).toBeGreaterThan(40);
 });

@@ -1,35 +1,14 @@
-/* Overall score card at the top of the Drives tab. */
+/* Overall score at the top of History: a display window with the score's digits. */
 .profile {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 14px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 12px;
+  gap: 16px;
+  padding: 16px 18px;
 }
 
-.profile-score {
-  font-size: 3rem;
-  font-weight: 700;
-  line-height: 1;
-  min-width: 1.8em;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-
-.profile-score.good {
-  color: var(--accent);
-}
-
-.profile-score.ok {
-  color: var(--warn);
-}
-
-.profile-score.poor {
-  color: var(--bad);
+.profile .readout {
+  font-size: 84px;
 }
 
 .profile-main {
@@ -39,15 +18,18 @@
 }
 
 .profile-title {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.05rem;
 }
 
 .profile-sub {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  margin-top: 4px;
 }
 
 .profile-note {
-  color: var(--muted);
-  font-size: 0.72rem;
-  margin-top: 2px;
+  color: var(--dim);
+  font-size: 0.8rem;
+  margin-top: 4px;
+  line-height: 1.4;
 }

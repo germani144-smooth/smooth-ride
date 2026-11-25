@@ -47,6 +47,15 @@ async function emptySpot(page) {
   return { x: main.x + main.width / 2, y: main.y + main.height - 30 };
 }
 
+/** On the Drive tab: the empty space beside Connect car (null in the split-screen strip,
+ *  where the whole tab is the live display and Start/Stop). */
+async function driveSpot(page) {
+  const bar = page.getByTestId("car-bar");
+  if (!(await bar.isVisible())) return null;
+  const box = await bar.boundingBox();
+  return { x: box.x + box.width - 30, y: box.y + box.height / 2 };
+}
+
 test.beforeEach(async ({ page }) => {
   page.on("pageerror", (err) => {
     throw err;
@@ -54,158 +63,161 @@ test.beforeEach(async ({ page }) => {
   await page.goto("./");
 });
 
-test("a long swipe left goes to the next tab, right goes back", async ({ page }) => {
-  await openTab(page, "Drives");
+test("a long swipe right on History goes to Drive, left on Drive goes back", async ({ page }) => {
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  await swipe(page, p, { x: p.x - 150, y: p.y });
-  await expect(current(page)).toHaveText("Settings");
-  await expect(page.locator('.view[data-view="settings"]')).toBeVisible();
-  await swipe(page, { x: p.x - 100, y: p.y }, { x: p.x + 80, y: p.y });
-  await expect(current(page)).toHaveText("Drives");
+  await swipe(page, p, { x: p.x + 150, y: p.y });
+  await expect(current(page)).toHaveText("Drive");
+  await expect(page.locator('.view[data-view="drive"]')).toBeVisible();
+  const d = await driveSpot(page);
+  test.skip(!d, "the split-screen strip has no free space on the Drive tab");
+  await swipe(page, d, { x: d.x - 160, y: d.y });
+  await expect(current(page)).toHaveText("History");
 });
 
 test("mid-drag: page follows 0.55×, fades, label fades in, lights up only at 70px", async ({
   page,
 }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  const view = page.locator('.view[data-view="drives"]');
+  const view = page.locator('.view[data-view="history"]');
   const label = page.locator("#swipe-label");
-  const settingsTab = page.locator('.tabs button[data-tab="settings"]');
-
+  const driveTab = page.locator('.tabs button[data-tab="drive"]');
   const opacity = async (loc) => num(await loc.evaluate((el) => getComputedStyle(el).opacity));
-  let lift = await swipe(page, p, { x: p.x - 35, y: p.y }, { release: false });
+
+  let lift = await swipe(page, p, { x: p.x + 35, y: p.y }, { release: false });
   // The last touchmove is delivered with the next frame.
   await expect.poll(() => opacity(label)).toBeCloseTo(0.7, 2);
   expect(await opacity(view)).toBeCloseTo(0.825, 2);
   const m = await view.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41);
-  expect(m).toBeCloseTo(-35 * 0.55, 1);
-  await expect(label).toHaveText("Settings ›");
+  expect(m).toBeCloseTo(35 * 0.55, 1);
+  await expect(label).toHaveText("‹ Drive");
   await expect(label).not.toHaveClass(/armed/);
-  await expect(settingsTab).not.toHaveClass(/swipe-armed/);
+  await expect(driveTab).not.toHaveClass(/swipe-armed/);
   await lift();
-  await expect(current(page)).toHaveText("Drives");
+  await expect(current(page)).toHaveText("History");
 
-  lift = await swipe(page, p, { x: p.x - 90, y: p.y }, { release: false });
+  lift = await swipe(page, p, { x: p.x + 90, y: p.y }, { release: false });
   await expect(label).toHaveClass(/armed/);
-  await expect(settingsTab).toHaveClass(/swipe-armed/);
+  await expect(driveTab).toHaveClass(/swipe-armed/);
   await expect.poll(() => opacity(view)).toBeCloseTo(0.65, 2);
   await lift();
-  await expect(current(page)).toHaveText("Settings");
+  await expect(current(page)).toHaveText("Drive");
 });
 
 test("the new tab slides in with the keyframe animation", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  await swipe(page, p, { x: p.x - 150, y: p.y });
-  const settings = page.locator('.view[data-view="settings"]');
-  const anim = await settings.evaluate((el) => ({
+  await swipe(page, p, { x: p.x + 150, y: p.y });
+  const drive = page.locator('.view[data-view="drive"]');
+  const anim = await drive.evaluate((el) => ({
     name: getComputedStyle(el).animationName,
     from: el.style.getPropertyValue("--swipe-from"),
   }));
-  expect(anim).toEqual({ name: "swipe-in", from: "40px" });
-  await expect(settings).not.toHaveClass(/swipe-in/); // removed when the animation ends
+  expect(anim).toEqual({ name: "swipe-in", from: "-40px" });
+  await expect(drive).not.toHaveClass(/swipe-in/); // removed when the animation ends
 });
 
 test("with reduced motion the tab switches without sliding", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  await swipe(page, p, { x: p.x - 150, y: p.y });
-  await expect(current(page)).toHaveText("Settings");
+  await swipe(page, p, { x: p.x + 150, y: p.y });
+  await expect(current(page)).toHaveText("Drive");
   const name = await page
-    .locator('.view[data-view="settings"]')
+    .locator('.view[data-view="drive"]')
     .evaluate((el) => getComputedStyle(el).animationName);
   expect(name).toBe("none");
 });
 
 test("a diagonal thumb swipe switches tab", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  await swipe(page, p, { x: p.x - 120, y: p.y - 60 });
-  await expect(current(page)).toHaveText("Settings");
+  await swipe(page, p, { x: p.x + 120, y: p.y - 60 });
+  await expect(current(page)).toHaveText("Drive");
 });
 
 test("swiping works on the whole page, including the header", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   test.skip(!(await page.locator(".topbar").isVisible()), "no header in the split-screen strip");
-  const box = await page.locator(".topbar").boundingBox();
-  const p = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  await swipe(page, p, { x: p.x - 150, y: p.y });
-  await expect(current(page)).toHaveText("Settings");
+  const box = await page.locator(".brand").boundingBox();
+  const p = { x: box.x + 10, y: box.y + box.height / 2 };
+  await swipe(page, p, { x: p.x + 150, y: p.y });
+  await expect(current(page)).toHaveText("Drive");
 });
 
 test("no swipe from the bottom bar", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const box = await page.locator(".tabs").boundingBox();
   const p = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   await swipe(page, p, { x: p.x - 150, y: p.y });
-  await expect(current(page)).toHaveText("Drives");
+  await swipe(page, { x: p.x - 100, y: p.y }, { x: p.x + 60, y: p.y });
+  await expect(current(page)).toHaveText("History");
 });
 
 test("a short swipe springs back", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  await swipe(page, p, { x: p.x - 50, y: p.y });
-  await expect(current(page)).toHaveText("Drives");
-  await expect(page.locator('.view[data-view="drives"]')).toHaveCSS("opacity", "1");
+  await swipe(page, p, { x: p.x + 50, y: p.y });
+  await expect(current(page)).toHaveText("History");
+  await expect(page.locator('.view[data-view="history"]')).toHaveCSS("opacity", "1");
 });
 
 test("swiping past the last tab does nothing", async ({ page }) => {
-  await openTab(page, "Settings");
+  await openTab(page, "History");
   const p = await emptySpot(page);
   await swipe(page, p, { x: p.x - 180, y: p.y });
-  await expect(current(page)).toHaveText("Settings");
+  await expect(current(page)).toHaveText("History");
 });
 
 test("a mostly vertical movement scrolls and never switches tab", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  await swipe(page, p, { x: p.x - 60, y: p.y - 200 });
-  await expect(current(page)).toHaveText("Drives");
+  await swipe(page, p, { x: p.x + 60, y: p.y - 200 });
+  await expect(current(page)).toHaveText("History");
 });
 
 test("a thumb arc that drifts vertically after starting still switches", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  // Sideways first, then curving 45px down: a natural one-handed swipe.
+  // Sideways first, then curving 45px up: a natural one-handed swipe.
   await swipe(
     page,
     p,
-    { x: p.x - 170, y: p.y + 45 },
+    { x: p.x + 170, y: p.y - 45 },
     { steps: 16, path: (k, a, b) => a.y + (b.y - a.y) * k * k },
   );
-  await expect(current(page)).toHaveText("Settings");
+  await expect(current(page)).toHaveText("Drive");
 });
 
 test("holding the finger still first, then swiping, still switches", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  await swipe(page, p, { x: p.x - 150, y: p.y }, { holdMs: 900 });
-  await expect(current(page)).toHaveText("Settings");
+  await swipe(page, p, { x: p.x + 150, y: p.y }, { holdMs: 900 });
+  await expect(current(page)).toHaveText("Drive");
 });
 
 test("two fingers never switch tab", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   const p = await emptySpot(page);
-  await swipe(page, { x: p.x - 60, y: p.y }, { x: p.x - 210, y: p.y }, { fingers: 2 });
-  await expect(current(page)).toHaveText("Drives");
+  await swipe(page, { x: p.x - 100, y: p.y }, { x: p.x + 60, y: p.y }, { fingers: 2 });
+  await expect(current(page)).toHaveText("History");
 });
 
 test("no swipe on data-noswipe areas such as a map", async ({ page }) => {
-  await openTab(page, "Drives");
+  await openTab(page, "History");
   await page.evaluate(() => {
     const map = document.createElement("div");
     map.setAttribute("data-noswipe", "");
     map.id = "fake-map";
     map.textContent = "map";
     map.className = "card";
-    document.querySelector('.view[data-view="drives"]').prepend(map);
+    document.querySelector('.view[data-view="history"]').prepend(map);
   });
   const box = await page.locator("#fake-map").boundingBox();
-  const p = { x: box.x + box.width - 20, y: box.y + box.height / 2 };
-  await swipe(page, p, { x: p.x - 180, y: p.y });
-  await expect(current(page)).toHaveText("Drives");
+  const p = { x: box.x + 20, y: box.y + box.height / 2 };
+  await swipe(page, p, { x: p.x + 180, y: p.y });
+  await expect(current(page)).toHaveText("History");
 });
 
 test("no swipe on the live driving numbers", async ({ page }) => {
@@ -218,24 +230,39 @@ test("no swipe on the live driving numbers", async ({ page }) => {
 test("no swipe at all while recording a drive", async ({ page, context }) => {
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 0.5, longitude: 0.5 });
+  const d = await driveSpot(page);
+  test.skip(!d, "the split-screen strip has no free space on the Drive tab");
   await page.getByTestId("record").click();
-  await expect(page.getByTestId("record")).toHaveText("Stop");
-  const p = await emptySpot(page);
-  await swipe(page, p, { x: p.x - 200, y: p.y });
+  await expect(page.getByTestId("record")).toHaveText("Stop drive");
+  await swipe(page, d, { x: d.x - 200, y: d.y });
   await expect(current(page)).toHaveText("Drive");
   await page.getByTestId("record").click();
 });
 
-test("the page itself never scrolls, even with a long tab after a reload", async ({ page }) => {
-  await openTab(page, "Settings");
+test("in Settings a swipe only gives a little and switches nothing", async ({ page }) => {
+  test.skip(
+    !(await page.getByRole("button", { name: "Settings" }).isVisible()),
+    "Settings is reached with the cog, which the split-screen strip hides",
+  );
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.locator('.view[data-view="settings"]')).toBeVisible();
+  const p = await emptySpot(page);
+  await swipe(page, p, { x: p.x + 160, y: p.y });
+  await swipe(page, p, { x: p.x - 160, y: p.y });
+  await expect(page.locator('.view[data-view="settings"]')).toBeVisible();
+  await expect(current(page)).toHaveCount(0);
+});
+
+test("the page itself never scrolls, even with a long view after a reload", async ({ page }) => {
+  await openTab(page, "History");
   await page.reload();
-  await expect(current(page)).toHaveText("Settings");
+  await expect(current(page)).toHaveText("History");
   await page.evaluate(() => {
     const filler = document.createElement("div");
     filler.className = "card";
     filler.textContent = "long";
     filler.id = "filler";
-    document.querySelector('.view[data-view="settings"]').append(filler);
+    document.querySelector('.view[data-view="history"]').append(filler);
     filler.style.height = "3000px";
   });
   const sizes = await page.evaluate(() => ({

@@ -5,11 +5,17 @@ import { unpackFix } from "./core/drives.js";
 import { TILE_SOURCES, createTileFallback } from "./core/tiles.js";
 
 const LEAFLET = "vendor/leaflet-1.9.4/";
-const COLORS = { 0: "#5fe0b4", 1: "#ffb547", 2: "#ff6b6b" };
+// Same palette as css/base.css: smooth is quiet cream so only firm and harsh stand out.
+const CABIN = "#120e0a";
+const CREAM = "#cdbfa8";
+const AMBER = "#ffb648";
+const RED = "#ff6a4d";
+const COLORS = { 0: CREAM, 1: AMBER, 2: RED };
 const EVENT_STYLE = {
-  brake: { color: "#ff6b6b", label: "Harsh braking" },
-  accel: { color: "#ffb547", label: "Harsh acceleration" },
-  lateral: { color: "#b18cff", label: "Sharp corner" },
+  // Every harsh event is a red dot (where you lost points); the popup says which kind.
+  brake: { color: RED, label: "Harsh braking" },
+  accel: { color: RED, label: "Harsh acceleration" },
+  lateral: { color: RED, label: "Sharp corner" },
 };
 
 let leafletPromise = null;
@@ -94,7 +100,7 @@ export async function showDriveMap(container, drive) {
   if (all.length > 1) {
     for (const run of track.runs) {
       L.polyline(run.points, {
-        color: "#0f1c1f",
+        color: CABIN,
         weight: 8,
         opacity: 0.6,
         interactive: false,
@@ -116,7 +122,7 @@ export async function showDriveMap(container, drive) {
     const style = EVENT_STYLE[ev.kind];
     L.circleMarker([ev.lat, ev.lon], {
       radius: 7,
-      color: "#0f1c1f",
+      color: CABIN,
       weight: 2,
       fillColor: style.color,
       fillOpacity: 1,
@@ -129,7 +135,7 @@ export async function showDriveMap(container, drive) {
   const pin = (latlng, fill, cls, text) =>
     L.circleMarker(latlng, {
       radius: 8,
-      color: "#eef6f3",
+      color: CREAM,
       weight: 3,
       fillColor: fill,
       fillOpacity: 1,
@@ -137,8 +143,8 @@ export async function showDriveMap(container, drive) {
     })
       .bindPopup(popupText(text))
       .addTo(map);
-  pin(track.start, "#5fe0b4", "pin-start", "Start");
-  pin(track.end, "#0f1c1f", "pin-end", "Finish");
+  pin(track.start, AMBER, "pin-start", "Start");
+  pin(track.end, CABIN, "pin-end", "Finish");
 
   map.fitBounds(track.bounds, { padding: [24, 24], maxZoom: 17 });
   return map;

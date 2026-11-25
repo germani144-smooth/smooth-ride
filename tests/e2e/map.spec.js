@@ -42,7 +42,7 @@ test.beforeEach(async ({ page }) => {
     throw err;
   });
   await page.goto("./");
-  await page.getByRole("button", { name: "Drives", exact: true }).click();
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await page.locator("#gpx-file").setInputFiles({
     name: "map.gpx",
     mimeType: "application/gpx+xml",
@@ -82,14 +82,14 @@ test("controls and attribution are dark", async ({ page }) => {
   await page.getByTestId("drive").getByRole("button").first().click();
   const map = page.getByTestId("drive-map");
   await expect(map).toHaveClass(/leaflet-container/);
-  await expect(map).toHaveCSS("background-color", "rgb(15, 28, 31)");
+  await expect(map).toHaveCSS("background-color", "rgb(18, 14, 10)");
   await expect(map.locator(".leaflet-control-attribution")).toHaveCSS(
     "background-color",
-    "rgba(15, 28, 31, 0.75)",
+    "rgba(18, 14, 10, 0.8)",
   );
   await expect(map.locator(".leaflet-control-zoom-in")).toHaveCSS(
     "background-color",
-    "rgb(23, 41, 45)",
+    "rgb(27, 20, 12)",
   );
   // No filter on the tiles any more: Stadia's tiles are dark by design.
   const filter = await map
@@ -150,7 +150,7 @@ test("dragging on the map pans it and never switches tab", async ({ page }) => {
     });
   }
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  await expect(page.locator(".tabs button[aria-current='page']")).toHaveText("Drives");
+  await expect(page.locator(".tabs button[aria-current='page']")).toHaveText("History");
   await expect(page.locator("#swipe-label")).toHaveCSS("opacity", "0");
 });
 

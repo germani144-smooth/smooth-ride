@@ -1,18 +1,13 @@
-// Drives tab: list, detail, delete, GPX import. Built with DOM nodes and textContent only.
+// History tab: overall score, list of drives with their firm/harsh strip, drive details,
+// GPX import and the demo drive. Built with DOM nodes and textContent only.
 import { parseGpx } from "./core/gpx.js";
 import { demoFixes, DEMO_NAME } from "./core/demo.js";
 import { makeDrive, finalizeDrive, needsRescore, sortDrives } from "./core/drives.js";
-import {
-  fmtDistance,
-  fmtDuration,
-  fmtSpeed,
-  fmtNumber,
-  fmtDate,
-  scoreClass,
-} from "./core/format.js";
+import { fmtDistance, fmtDuration, fmtSpeed, fmtNumber, fmtDate } from "./core/format.js";
 import { db } from "./db.js";
 import { profileScore } from "./core/profile.js";
 import { showDriveMap } from "./map.js";
+import { createReadout } from "./lcd.js";
 
 const SOURCE_LABEL = { live: "Live", gpx: "GPX", demo: "Demo" };
 
@@ -134,22 +129,35 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
     return wrap;
   }
 
+  /** Where along the drive it went firm (amber) or harsh (red); gaps stay empty. */
+  function ribbon(s) {
+    const levels = Array.isArray(s.ribbon) ? s.ribbon : [];
+    const cls = { "-1": "rn", 0: "r0", 1: "r1", 2: "r2" };
+    return el(
+      "div",
+      { class: "ribbon", "aria-hidden": "true", "data-testid": "ribbon" },
+      levels.map((level) => el("i", { class: cls[level] || "rn" })),
+    );
+  }
+
   /** Overall score: every real drive weighted by distance. */
   function renderProfile(drives) {
     const p = profileScore(drives);
-    const scoreText = p.score == null ? "–" : String(p.score);
+    const scoreText = p.score == null ? "--" : String(p.score);
     const sub =
       p.score == null
-        ? "Your overall score appears after your first scored drive."
-        : `${fmtDistance(p.distance)} · ${p.drives} drive${p.drives === 1 ? "" : "s"}`;
+        ? "Appears after your first scored drive."
+        : `${fmtDistance(p.distance)} over ${p.drives} drive${p.drives === 1 ? "" : "s"}`;
+    const score = createReadout(scoreText, { hot: true });
+    score.digits.classList.add("profile-score");
     profile.replaceChildren(
-      el("span", { class: "profile-score " + scoreClass(p.score), text: scoreText }),
+      score.root,
       el("span", { class: "profile-main" }, [
         el("span", { class: "profile-title", text: "Your score" }),
         el("span", { class: "profile-sub", text: sub }),
         el("span", {
           class: "profile-note",
-          text: "Every drive weighted by its distance. Demo drives don't count.",
+          text: "Longer drives count for more. Demo drives don't count.",
         }),
       ]),
     );
@@ -173,26 +181,26 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
     }
     for (const d of drives) {
       const s = d.summary;
-      const scoreText = s.score == null ? "–" : String(s.score);
+      const scoreText = s.score == null ? "--" : String(s.score);
+      const meta = [
+        fmtDistance(s.distance),
+        fmtDuration(s.duration),
+        `${s.harsh} harsh`,
+        s.car?.lPer100km != null ? `${fmtNumber(s.car.lPer100km, 1)} L/100 km` : null,
+        SOURCE_LABEL[d.source] || "Live",
+      ].filter(Boolean);
       const head = el(
         "button",
         { type: "button", class: "drive-row", "aria-expanded": String(open === d.id) },
         [
-          el("span", { class: "drive-score " + scoreClass(s.score), text: scoreText }),
+          createReadout(scoreText, { hot: true, className: "drive-score" }).root,
           el("span", { class: "drive-main" }, [
             el("span", { class: "drive-title", text: d.name || fmtDate(s.startedAt) }),
-            el("span", {
-              class: "drive-sub",
-              text: [
-                fmtDistance(s.distance),
-                fmtDuration(s.duration),
-                `${s.harsh} harsh`,
-                s.car?.lPer100km != null ? `${fmtNumber(s.car.lPer100km, 1)} L/100` : null,
-                SOURCE_LABEL[d.source] || "Live",
-              ]
-                .filter(Boolean)
-                .join(" · "),
-            }),
+            el(
+              "span",
+              { class: "drive-sub" },
+              meta.map((text) => el("span", { text })),
+            ),
           ]),
         ],
       );
@@ -200,7 +208,7 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
         open = open === d.id ? null : d.id;
         render();
       });
-      const item = el("li", { class: "drive", "data-testid": "drive" }, [head]);
+      const item = el("li", { class: "drive", "data-testid": "drive" }, [head, ribbon(s)]);
       if (open === d.id) item.appendChild(detail(d, token));
       list.appendChild(item);
       if (open === d.id) requestAnimationFrame(() => item.scrollIntoView({ block: "nearest" }));

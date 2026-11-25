@@ -1,11 +1,11 @@
-/* Drive map: route, legend and Leaflet chrome in the app's colours. */
+/* Drive map: the dark Stadia map (js/core/tiles.js), the legend, and Leaflet's controls in
+   the app's colours. Smooth stretches are quiet cream; only firm and harsh stand out. */
 .drive-map-wrap {
-  margin: 0 -14px 12px;
+  margin: 0 -16px;
 }
 
 .drive-map {
-  height: min(300px, 55vh);
-  background: var(--bg);
+  height: min(280px, 50vh);
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -13,9 +13,9 @@
 .map-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 14px;
-  padding: 8px 14px 0;
-  color: var(--muted);
+  gap: 4px 16px;
+  padding: 10px 16px 0;
+  color: var(--dim);
   font-size: 0.75rem;
 }
 
@@ -30,30 +30,34 @@
 }
 
 .key-smooth::before {
-  background: var(--accent);
+  background: var(--smooth);
 }
 
 .key-firm::before {
-  background: var(--warn);
+  background: var(--amber);
 }
 
 .key-harsh::before {
-  background: var(--bad);
+  background: var(--red);
 }
 
 .key-event::before {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--bad);
-  border: 2px solid var(--bg);
+  background: var(--red);
+  border: 2px solid var(--cabin);
 }
 
-/* Dark-friendly Leaflet chrome */
 /* .leaflet-container in these selectors outranks leaflet.css, which loads after ours. */
+.drive-map.leaflet-container {
+  background: var(--cabin);
+  font-family: var(--text-font);
+}
+
 .drive-map.leaflet-container .leaflet-control-attribution {
-  background: rgba(15, 28, 31, 0.75);
-  color: var(--muted);
+  background: rgba(18, 14, 10, 0.8);
+  color: var(--dim);
 }
 
 .drive-map.leaflet-container .leaflet-control-attribution a {
@@ -62,14 +66,8 @@
 
 .drive-map .leaflet-popup-content-wrapper,
 .drive-map .leaflet-popup-tip {
-  background: var(--surface);
+  background: var(--lcd);
   color: var(--text);
-}
-
-/* Dark map tiles come from Stadia Maps (js/core/tiles.js); while they load, the map shows
-   the app background. Leaflet controls in the app's dark colours. */
-.drive-map.leaflet-container {
-  background: var(--bg);
 }
 
 .drive-map .leaflet-bar {
@@ -79,12 +77,12 @@
 
 .drive-map .leaflet-bar a,
 .drive-map .leaflet-bar a:hover {
-  background: var(--surface);
+  background: var(--lcd);
   color: var(--text);
   border-bottom-color: var(--line);
 }
 
 .drive-map .leaflet-bar a.leaflet-disabled {
-  background: var(--surface);
-  color: var(--line);
+  background: var(--lcd);
+  color: var(--ghost);
 }

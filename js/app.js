@@ -9,6 +9,7 @@ import { createRecorder } from "./live.js";
 import { createDrivesView } from "./drives.js";
 import { createSwipe } from "./swipe.js";
 import { createCar } from "./car.js";
+import { buildArch, buildBar } from "./lcd.js";
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -25,13 +26,13 @@ const store = createStore(localBackend());
 let guard = null;
 
 // ---- Version ----
-document
-  .querySelectorAll('[data-testid="version"], [data-testid="settings-version"]')
-  .forEach((el) => {
-    el.textContent = "v" + VERSION;
-  });
+$('[data-testid="version"]').textContent = VERSION;
 
-// ---- Drives and recording ----
+// ---- The display: the arched bar graph and the flat bar (split screen) ----
+buildArch($("#arch"));
+buildBar($("#sbar"));
+
+// ---- History and recording ----
 const drivesView = createDrivesView({
   list: $("#drive-list"),
   profile: $("#profile"),
@@ -61,6 +62,9 @@ const recorder = createRecorder({
     jerk: $('[data-testid="jerk"]'),
     events: $('[data-testid="events"]'),
     speed: $('[data-testid="speed"]'),
+    timer: $("#rec-timer"),
+    arch: $("#arch"),
+    bar: $("#sbar"),
   },
   onStopped: () => {
     drivesView.render();
@@ -68,19 +72,30 @@ const recorder = createRecorder({
   },
 });
 
-// ---- Tabs ----
+// ---- Tabs (Drive, History) and Settings (the cog) ----
 let currentTab = "drive";
+let lastTab = "drive"; // where the cog returns to
 const tabButtons = () => [...document.querySelectorAll(".tabs button")];
-function showView(name) {
+const VIEWS = ["drive", "history", "settings"];
+function showView(requested) {
+  // "drives" was the History tab's name before 1.0.
+  const name = requested === "drives" ? "history" : VIEWS.includes(requested) ? requested : "drive";
   currentTab = name;
+  if (name !== "settings") lastTab = name;
+  const cog = $("#settings-btn");
+  if (name === "settings") cog.setAttribute("aria-current", "page");
+  else cog.removeAttribute("aria-current");
   document.querySelectorAll(".view").forEach((v) => (v.hidden = v.dataset.view !== name));
   document.querySelectorAll(".tabs button").forEach((b) => {
     if (b.dataset.tab === name) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
   });
   store.set("ui.tab", name);
-  if (name === "drives") drivesView.render();
+  if (name === "history") drivesView.render();
 }
+$("#settings-btn").addEventListener("click", () =>
+  showView(currentTab === "settings" ? lastTab : "settings"),
+);
 document
   .querySelectorAll(".tabs button")
   .forEach((b) => b.addEventListener("click", () => showView(b.dataset.tab)));

@@ -1,8 +1,11 @@
-/* Settings tab: cards for app info and backup. */
+/* Settings (opened with the cog): cards for app info and backup. */
 .card {
-  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 18px;
+  padding: 16px;
   margin-bottom: 12px;
+}
+
+.card p {
+  margin: 0 0 8px;
 }

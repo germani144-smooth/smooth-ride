@@ -3,6 +3,7 @@ import { createElmSession } from "./core/elm.js";
 import { packRow, createConsumption } from "./core/car.js";
 import { fmtNumber } from "./core/format.js";
 import { serialAvailable, openAdapter } from "./obd-serial.js";
+import { setReadout } from "./lcd.js";
 
 const MIN_CYCLE_MS = 250; // don't hammer the adapter faster than this
 
@@ -25,7 +26,7 @@ export function createCar({ els }) {
     showingFuel = on;
     if (!on) {
       els.metricLabel.textContent = "km/h";
-      els.metric.textContent = "--";
+      setReadout(els.metric, "--", 3);
     }
   }
 
@@ -34,7 +35,7 @@ export function createCar({ els }) {
     const c = consumption.push(row);
     if (!c) return;
     showFuel(true);
-    els.metric.textContent = fmtNumber(c.value, 1);
+    setReadout(els.metric, fmtNumber(c.value, 1), 3);
     els.metricLabel.textContent = c.unit;
   }
 

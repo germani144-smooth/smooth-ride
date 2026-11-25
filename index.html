@@ -8,16 +8,23 @@
       content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://tiles.stadiamaps.com https://tile.openstreetmap.org; connect-src 'self'; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
     <meta name="referrer" content="no-referrer" />
-    <meta name="theme-color" content="#0f1c1f" />
+    <meta name="theme-color" content="#120e0a" />
     <title>Smooth Ride</title>
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link
+      rel="preload"
+      href="vendor/fonts/doto-900.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <!-- One stylesheet per area, in this order (later files build on earlier ones). -->
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/live.css" />
-    <link rel="stylesheet" href="css/drives.css" />
+    <link rel="stylesheet" href="css/history.css" />
     <link rel="stylesheet" href="css/map.css" />
     <link rel="stylesheet" href="css/profile.css" />
     <link rel="stylesheet" href="css/car.css" />
@@ -27,31 +34,51 @@
   <body>
     <header class="topbar">
       <h1 class="brand">Smooth Ride</h1>
-      <span class="version" data-testid="version"></span>
+      <span class="topbar-right">
+        <span class="rec-timer" id="rec-timer" data-testid="rec-timer" hidden></span>
+        <button type="button" class="cog" id="settings-btn" aria-label="Settings">
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+            <path
+              d="M10.3 2.8h3.4l.5 2.6a7.4 7.4 0 0 1 1.9 1.1l2.5-.9 1.7 2.9-2 1.7a7.4 7.4 0 0 1 0 2.2l2 1.7-1.7 2.9-2.5-.9a7.4 7.4 0 0 1-1.9 1.1l-.5 2.6h-3.4l-.5-2.6a7.4 7.4 0 0 1-1.9-1.1l-2.5.9-1.7-2.9 2-1.7a7.4 7.4 0 0 1 0-2.2l-2-1.7 1.7-2.9 2.5.9a7.4 7.4 0 0 1 1.9-1.1z"
+            />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      </span>
     </header>
 
     <main>
       <section id="view-drive" class="view" data-view="drive">
         <div class="live" data-testid="live" data-noswipe>
-          <div class="metric metric-main">
-            <span class="metric-value" data-testid="score">--</span>
-            <span class="metric-label">Smooth</span>
+          <div class="lcd live-main">
+            <svg class="arch" id="arch" aria-hidden="true"></svg>
+            <div class="readout readout-main">
+              <span class="ghost" aria-hidden="true"></span
+              ><span class="digits" data-testid="score">--</span>
+            </div>
+            <div class="sbar" id="sbar" aria-hidden="true"></div>
+            <div class="lcd-caption"><span>Smoothness</span><span>last 10 s</span></div>
           </div>
-          <div class="metric">
-            <span class="metric-value" data-testid="jerk">--</span>
-            <span class="metric-label">Jerk</span>
+          <div class="lcd metric metric-jerk">
+            <div class="readout">
+              <span class="ghost" aria-hidden="true"></span
+              ><span class="digits" data-testid="jerk">--</span>
+            </div>
+            <span class="metric-label">Jerk m/s³</span>
           </div>
-          <div class="metric">
-            <span class="metric-value" data-testid="events">0</span>
+          <div class="lcd metric">
+            <div class="readout">
+              <span class="ghost" aria-hidden="true"></span
+              ><span class="digits hot" data-testid="events">0</span>
+            </div>
             <span class="metric-label">Harsh</span>
           </div>
-          <div class="metric">
-            <span class="metric-value" data-testid="speed">--</span>
+          <div class="lcd metric">
+            <div class="readout">
+              <span class="ghost" aria-hidden="true"></span
+              ><span class="digits" data-testid="speed">--</span>
+            </div>
             <span class="metric-label" data-testid="speed-label">km/h</span>
-          </div>
-          <div class="control">
-            <button type="button" id="record-btn" data-testid="record">Start</button>
-            <span class="status" id="record-status" role="status"></span>
           </div>
         </div>
         <div class="car-bar" data-testid="car-bar">
@@ -61,18 +88,24 @@
             <span class="status" id="car-rpm" data-testid="car-rpm"></span>
           </span>
         </div>
-        <p class="hint">
-          Mount the phone, tap Start, then switch to split screen with Google Maps. The screen stays
-          on while recording.
-        </p>
+        <div class="control">
+          <p class="hint">
+            Mount the phone, tap Start drive, then open Google Maps in split screen. The screen
+            stays on while recording.
+          </p>
+          <button type="button" id="record-btn" data-testid="record">Start drive</button>
+          <span class="status" id="record-status" role="status"></span>
+        </div>
       </section>
 
-      <section id="view-drives" class="view" data-view="drives" hidden>
-        <h2>Drives</h2>
-        <div class="profile" id="profile" data-testid="profile"></div>
-        <label class="button" for="gpx-file">Import GPX</label>
-        <input type="file" id="gpx-file" accept=".gpx,application/gpx+xml" multiple hidden />
-        <button type="button" id="demo-btn">Demo drive</button>
+      <section id="view-history" class="view" data-view="history" hidden>
+        <h2>History</h2>
+        <div class="profile lcd" id="profile" data-testid="profile"></div>
+        <div class="tools">
+          <label class="button" for="gpx-file">Import GPX</label>
+          <input type="file" id="gpx-file" accept=".gpx,application/gpx+xml" multiple hidden />
+          <button type="button" id="demo-btn">Demo drive</button>
+        </div>
         <p class="status" id="gpx-status" role="status"></p>
         <ul class="drive-list" id="drive-list"></ul>
       </section>
@@ -81,7 +114,7 @@
         <h2>Settings</h2>
         <div class="card">
           <h3>App</h3>
-          <p>Version <span data-testid="settings-version"></span></p>
+          <p>Version <span data-testid="version"></span></p>
           <button type="button" id="check-updates">Check for updates</button>
           <p class="status" id="update-status" role="status"></p>
         </div>
@@ -100,8 +133,7 @@
 
     <nav class="tabs" aria-label="Sections">
       <button type="button" data-tab="drive" aria-current="page">Drive</button>
-      <button type="button" data-tab="drives">Drives</button>
-      <button type="button" data-tab="settings">Settings</button>
+      <button type="button" data-tab="history">History</button>
     </nav>
   </body>
 </html>

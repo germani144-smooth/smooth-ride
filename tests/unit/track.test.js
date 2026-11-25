@@ -68,3 +68,29 @@ test("a signal gap breaks the line instead of drawing a jump", () => {
 test("nothing to draw gives null", () => {
   assert.equal(buildTrack([]), null);
 });
+
+test("ribbon: smooth drive is all smooth, a hard stop shows harsh near the end", async () => {
+  const { buildRibbon, RIBBON_BUCKETS } = await import("../../js/core/track.js");
+  const calm = buildRibbon(drive(120, () => 15));
+  assert.equal(calm.length, RIBBON_BUCKETS);
+  assert.ok(calm.every((l) => l === 0));
+  const stop = buildRibbon(drive(90, (s) => (s < 70 ? 20 : Math.max(0, 20 - 6 * (s - 70)))));
+  const firstHarsh = stop.indexOf(2);
+  assert.ok(firstHarsh > RIBBON_BUCKETS * 0.8, `harsh at ${firstHarsh}`);
+  assert.ok(stop.slice(0, RIBBON_BUCKETS / 2).every((l) => l === 0));
+});
+
+test("ribbon: a tunnel gap leaves no-data buckets, not a fake stretch", async () => {
+  const { buildRibbon } = await import("../../js/core/track.js");
+  const a = drive(60, () => 15);
+  const b = drive(60, () => 15, a.at(-1).t + 120_000).map((f) => ({ ...f, lat: f.lat + 0.02 }));
+  const r = buildRibbon([...a, ...b]);
+  assert.ok(r.includes(-1));
+  assert.ok(r.filter((l) => l === 0).length > 10);
+});
+
+test("finalized drives carry their ribbon", async () => {
+  const { makeDrive, finalizeDrive } = await import("../../js/core/drives.js");
+  const d = finalizeDrive(makeDrive({ source: "gpx", fixes: drive(60, () => 15) }));
+  assert.equal(d.summary.ribbon.length, 60);
+});

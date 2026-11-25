@@ -46,8 +46,10 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
 
 ## Code
 
-- Static files, no build step, no dependencies, except a pinned local copy of Leaflet
-  under `vendor/` (never a CDN). Dev tools (Prettier, Playwright) are devDependencies only.
+- Static files, no build step, no dependencies, except pinned local copies under `vendor/`
+  (never a CDN): Leaflet, and two OFL fonts in `vendor/fonts/` (Doto 900 for readouts,
+  Atkinson Hyperlegible 400/700 for text) with their licence files. Dev tools (Prettier,
+  Playwright) are devDependencies only.
 - Core logic is pure (no DOM) in `js/core/` and has unit tests in `tests/unit/`.
   `js/app.js` is UI wiring only.
 - One analysis pipeline: live recording and imported GPX files go through the same
@@ -79,11 +81,30 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
 - Live view must work in Android split screen next to Google Maps (short strip, big numbers);
   the `split-screen` Playwright project checks this.
 
+## Design (v1.0, "trip computer")
+
+- Dark warm cabin with an amber dot-matrix display. Colours are tokens on `:root` in
+  `css/base.css` (`--cabin`, `--lcd`, `--ghost`, `--line`, `--amber`, `--text`, `--dim`,
+  `--red`, `--smooth`); use them, don't add new hex values in other CSS. `js/map.js` mirrors
+  them for Leaflet.
+- Amber is the display and the accent; red is harsh and Stop; smooth is quiet cream on maps
+  and the drive strip, so only firm (amber) and harsh (red) stand out. Scores are always amber
+  (no green/amber/red score colours).
+- Numbers that are readouts use the LCD readout (`setReadout`/`createReadout` in `js/lcd.js`):
+  Doto digits right-aligned over ghost 8s, decimal points drawn as a square dot. The element
+  with the digits keeps plain text (tests read it). Other text is Atkinson Hyperlegible.
+- The arched bar graph over the live score is the one bold element; keep everything else
+  quiet. Its geometry is `archGeometry` in `js/core/lcd.js` (also used for the app icon).
+- Two tabs, Drive and History; Settings is the cog in the header (not a tab, not swiped to).
+- Start/Stop sits at the bottom of the Drive tab, in thumb reach. The split-screen strip
+  shows score (with a flat bar), Harsh and km/h stacked, and Stop; no header, no jerk.
+- No middle-dot meta strings, no all-caps labels; sentence case.
+
 ## Code layout
 
 - README.md has a "Code layout" table of every file and what it does. Keep it current when
   adding, moving or renaming a file.
-- CSS is one file per area in `css/` (base, layout, live, drives, map, profile, car,
+- CSS is one file per area in `css/` (base, layout, live, history, map, profile, car,
   settings), loaded in that order from `index.html` and listed in `PRECACHE`. Later files
   build on earlier ones, so keep the order. Name sections by area, never by version. A new
   area gets its own file, added in both places.

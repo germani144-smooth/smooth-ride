@@ -2,6 +2,7 @@
 // [t, lat, lon, speed|null, accuracy|null] to keep storage and exports small.
 import { analyzeFixes, ANALYSIS_VERSION } from "./analysis.js";
 import { summarizeCar, isValidRows } from "./car.js";
+import { buildRibbon } from "./track.js";
 
 export const round = (n, digits) => (n == null ? null : Number(n.toFixed(digits)));
 
@@ -27,9 +28,12 @@ export function makeDrive({ id, source, name = null, fixes = [], now = Date.now(
 
 /** (Re)compute a drive's summary with the current analysis. Returns a new record. */
 export function finalizeDrive(drive) {
-  const summary = analyzeFixes(drive.fixes.map(unpackFix));
+  const fixes = drive.fixes.map(unpackFix);
+  const summary = analyzeFixes(fixes);
   // Car (OBD) data, if an adapter was connected: fuel per GPS distance, RPM, throttle.
   summary.car = drive.obd ? summarizeCar(drive.obd, summary.distance) : null;
+  // Where along the drive it went firm or harsh (the strip under each drive in History).
+  summary.ribbon = buildRibbon(fixes);
   return { ...drive, inProgress: false, summary };
 }
 
