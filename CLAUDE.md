@@ -47,7 +47,7 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
 ## Code
 
 - Static files, no build step, no dependencies, except pinned local copies under `vendor/`
-  (never a CDN): Leaflet, and two OFL fonts in `vendor/fonts/` (Doto 900 for readouts,
+  (never a CDN): Leaflet, and two OFL fonts in `vendor/fonts/` (DSEG7 Classic Bold for readouts,
   Atkinson Hyperlegible 400/700 for text) with their licence files. Dev tools (Prettier,
   Playwright) are devDependencies only.
 - Core logic is pure (no DOM) in `js/core/` and has unit tests in `tests/unit/`.
@@ -83,7 +83,7 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
 
 ## Design (v1.0, "trip computer")
 
-- Dark warm cabin with an amber dot-matrix display. Colours are tokens on `:root` in
+- Dark warm cabin with an amber 7-segment LCD display. Colours are tokens on `:root` in
   `css/base.css` (`--cabin`, `--lcd`, `--ghost`, `--line`, `--amber`, `--text`, `--dim`,
   `--red`, `--smooth`); use them, don't add new hex values in other CSS. `js/map.js` mirrors
   them for Leaflet.
@@ -91,7 +91,8 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   and the drive strip, so only firm (amber) and harsh (red) stand out. Scores are always amber
   (no green/amber/red score colours).
 - Numbers that are readouts use the LCD readout (`setReadout`/`createReadout` in `js/lcd.js`):
-  Doto digits right-aligned over ghost 8s, decimal points drawn as a square dot. The element
+  DSEG7 digits right-aligned over ghost 8s (its decimal point has zero width, so "0.4" sits
+  over "8.8"; ghost text comes from `ghostFor` in `js/core/lcd.js`). The element
   with the digits keeps plain text (tests read it). Other text is Atkinson Hyperlegible.
 - The arched bar graph over the live score is the one bold element; keep everything else
   quiet. Its geometry is `archGeometry` in `js/core/lcd.js` (also used for the app icon).

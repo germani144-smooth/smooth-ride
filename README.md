@@ -29,8 +29,8 @@ phone and choose "Install app".
 ### The look
 
 A dark, warm cabin with an amber trip-computer display, inspired by the digital dash of an
-early-2000s roadster. Readouts use **Doto**, a dot-matrix font, with the unlit segments
-ghosted behind the digits like a real LCD ("88" behind "82"). Over the live smoothness score
+early-2000s roadster. Readouts are 7-segment LCD digits (**DSEG7 Classic**), with the unlit
+segments ghosted behind them like a real display ("88" behind "82"). Over the live smoothness score
 an arched bar graph lights up segment by segment, like a digital rev counter. Text is set in
 **Atkinson Hyperlegible**, designed for legibility at a glance. Amber is the display and the
 accent; red is for harsh and for Stop; smooth stretches on maps and strips are a quiet cream,
@@ -190,52 +190,52 @@ don't depend on how the phone is mounted, and live drives and GPX files score th
 Plain static files, no build step. Logic that can be tested without a browser lives in
 `js/core/` (pure, unit tested); the rest of `js/` wires it to the page.
 
-| File                    | What it does                                                                 |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| `index.html`            | The page: header with the cog, Drive, History and Settings views, tabs; CSP  |
-| `manifest.webmanifest`  | Installable app: name, icons, fixed id `/smooth-ride/`                       |
-| `sw.js`                 | Service worker: caches every app file per version, serves them offline       |
-| `css/base.css`          | Palette, fonts, reset, buttons, and the LCD readout (ghost digits)           |
-| `css/layout.css`        | Header (timer, cog), scrolling content area, two-tab bar, swipe              |
-| `css/live.css`          | Drive tab: smoothness display and arch, readouts, Start/Stop, strip          |
-| `css/history.css`       | History: tools, drive list, each drive's firm/harsh strip, stats             |
-| `css/map.css`           | Drive map, legend, dark Leaflet controls                                     |
-| `css/profile.css`       | Overall score card                                                           |
-| `css/car.css`           | Connect car bar and Car data stats                                           |
-| `css/settings.css`      | Settings cards (opened with the cog)                                         |
-| `js/app.js`             | Starts everything: tabs and the cog, backup Export/Import, updates           |
-| `js/version.js`         | The app version (must match `sw.js` and `package.json`)                      |
-| `js/live.js`            | Recording: GPS → analyzer → live numbers, wake lock, saving the drive        |
-| `js/drives.js`          | History tab: overall score, drive list and strips, details, GPX import, demo |
-| `js/map.js`             | Loads Leaflet on demand, draws the tiles, route, events and pins             |
-| `js/car.js`             | Connect car button, OBD polling loop, live fuel use, rows for the drive      |
-| `js/obd-serial.js`      | Bluetooth Classic link to the ELM327 through Web Serial                      |
-| `js/swipe.js`           | Swipe gesture wiring (passive touch listeners)                               |
-| `js/lcd.js`             | Draws readouts with ghost digits, the arch and the flat bar                  |
-| `js/db.js`              | IndexedDB storage for drives (`smooth-ride.db`)                              |
-| `js/core/analysis.js`   | The analyzer: speed, acceleration, jerk, harsh events, score                 |
-| `js/core/geo.js`        | Distance and bearing between coordinates                                     |
-| `js/core/gpx.js`        | GPX file parser                                                              |
-| `js/core/drives.js`     | Drive records: compact fixes, finalizing, validation, sorting                |
-| `js/core/track.js`      | What the map draws, and each drive's firm/harsh strip (ribbon)               |
-| `js/core/tiles.js`      | Map tile sources (Stadia dark, OpenStreetMap fallback) and when to fall back |
-| `js/core/profile.js`    | Overall score: drives weighted by distance                                   |
-| `js/core/demo.js`       | The simulated demo drive                                                     |
-| `js/core/elm.js`        | ELM327 protocol: init, reply parsing, PID decoding, polling session          |
-| `js/core/car.js`        | Car data in drives: compact rows, fuel and RPM summary, live consumption     |
-| `js/core/swipe.js`      | Swipe numbers and decisions (start, cancel, follow, fade, switch)            |
-| `js/core/lcd.js`        | Display logic: ghost digits, lit segments, the arch's geometry               |
-| `js/core/format.js`     | Display formatting: distance, duration, speed, score colour                  |
-| `js/core/backup.js`     | Versioned Export/Import file format                                          |
-| `js/core/storage.js`    | Prefixed `smooth-ride.` key/value storage                                    |
-| `js/core/update.js`     | When an app update may reload the page                                       |
-| `js/core/escape.js`     | HTML escaping for user text                                                  |
-| `vendor/leaflet-1.9.4/` | Pinned, unmodified copy of Leaflet (maps)                                    |
-| `vendor/fonts/`         | Doto (readouts) and Atkinson Hyperlegible (text), with their licences        |
-| `tests/unit/`           | Unit tests for `js/core/` and the repo rules (`node --test`)                 |
-| `tests/e2e/`            | Playwright browser tests on a phone and in split screen                      |
-| `tests/fake-elm.js`     | Simulated ELM327 clone, used by unit and browser tests                       |
-| `tests/server.js`       | Local static server under `/smooth-ride/`, like GitHub Pages                 |
+| File                    | What it does                                                                       |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `index.html`            | The page: header with the cog, Drive, History and Settings views, tabs; CSP        |
+| `manifest.webmanifest`  | Installable app: name, icons, fixed id `/smooth-ride/`                             |
+| `sw.js`                 | Service worker: caches every app file per version, serves them offline             |
+| `css/base.css`          | Palette, fonts, reset, buttons, and the LCD readout (ghost digits)                 |
+| `css/layout.css`        | Header (timer, cog), scrolling content area, two-tab bar, swipe                    |
+| `css/live.css`          | Drive tab: smoothness display and arch, readouts, Start/Stop, strip                |
+| `css/history.css`       | History: tools, drive list, each drive's firm/harsh strip, stats                   |
+| `css/map.css`           | Drive map, legend, dark Leaflet controls                                           |
+| `css/profile.css`       | Overall score card                                                                 |
+| `css/car.css`           | Connect car bar and Car data stats                                                 |
+| `css/settings.css`      | Settings cards (opened with the cog)                                               |
+| `js/app.js`             | Starts everything: tabs and the cog, backup Export/Import, updates                 |
+| `js/version.js`         | The app version (must match `sw.js` and `package.json`)                            |
+| `js/live.js`            | Recording: GPS → analyzer → live numbers, wake lock, saving the drive              |
+| `js/drives.js`          | History tab: overall score, drive list and strips, details, GPX import, demo       |
+| `js/map.js`             | Loads Leaflet on demand, draws the tiles, route, events and pins                   |
+| `js/car.js`             | Connect car button, OBD polling loop, live fuel use, rows for the drive            |
+| `js/obd-serial.js`      | Bluetooth Classic link to the ELM327 through Web Serial                            |
+| `js/swipe.js`           | Swipe gesture wiring (passive touch listeners)                                     |
+| `js/lcd.js`             | Draws readouts with ghost digits, the arch and the flat bar                        |
+| `js/db.js`              | IndexedDB storage for drives (`smooth-ride.db`)                                    |
+| `js/core/analysis.js`   | The analyzer: speed, acceleration, jerk, harsh events, score                       |
+| `js/core/geo.js`        | Distance and bearing between coordinates                                           |
+| `js/core/gpx.js`        | GPX file parser                                                                    |
+| `js/core/drives.js`     | Drive records: compact fixes, finalizing, validation, sorting                      |
+| `js/core/track.js`      | What the map draws, and each drive's firm/harsh strip (ribbon)                     |
+| `js/core/tiles.js`      | Map tile sources (Stadia dark, OpenStreetMap fallback) and when to fall back       |
+| `js/core/profile.js`    | Overall score: drives weighted by distance                                         |
+| `js/core/demo.js`       | The simulated demo drive                                                           |
+| `js/core/elm.js`        | ELM327 protocol: init, reply parsing, PID decoding, polling session                |
+| `js/core/car.js`        | Car data in drives: compact rows, fuel and RPM summary, live consumption           |
+| `js/core/swipe.js`      | Swipe numbers and decisions (start, cancel, follow, fade, switch)                  |
+| `js/core/lcd.js`        | Display logic: ghost digits, lit segments, the arch's geometry                     |
+| `js/core/format.js`     | Display formatting: distance, duration, speed, score colour                        |
+| `js/core/backup.js`     | Versioned Export/Import file format                                                |
+| `js/core/storage.js`    | Prefixed `smooth-ride.` key/value storage                                          |
+| `js/core/update.js`     | When an app update may reload the page                                             |
+| `js/core/escape.js`     | HTML escaping for user text                                                        |
+| `vendor/leaflet-1.9.4/` | Pinned, unmodified copy of Leaflet (maps)                                          |
+| `vendor/fonts/`         | DSEG7 Classic (7-segment readouts) and Atkinson Hyperlegible (text), with licences |
+| `tests/unit/`           | Unit tests for `js/core/` and the repo rules (`node --test`)                       |
+| `tests/e2e/`            | Playwright browser tests on a phone and in split screen                            |
+| `tests/fake-elm.js`     | Simulated ELM327 clone, used by unit and browser tests                             |
+| `tests/server.js`       | Local static server under `/smooth-ride/`, like GitHub Pages                       |
 
 ## Development
 

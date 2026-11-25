@@ -62,7 +62,7 @@ test("readouts show ghost 8s behind the digits; fonts come from our own address"
   expect(fonts.every((u) => u.startsWith("http://localhost:4173/smooth-ride/vendor/fonts/"))).toBe(
     true,
   );
-  expect(await page.evaluate(() => document.fonts.check('900 40px "Doto"'))).toBe(true);
+  expect(await page.evaluate(() => document.fonts.check('700 40px "DSEG7 Classic"'))).toBe(true);
 });
 
 test("live numbers fit without scrolling", async ({ page }) => {

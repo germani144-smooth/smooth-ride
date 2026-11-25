@@ -19,11 +19,6 @@ export function ghostFor(text, minDigits = 2) {
   return "8".repeat(Math.max(0, minDigits - digits)) + ghost;
 }
 
-/** Split a readout into parts the display draws: digits and decimal points. */
-export function displayParts(text) {
-  return [...String(text)].map((ch) => (ch === "." || ch === "," ? { point: true } : { ch }));
-}
-
 /** How many of `segments` light up for a 0..100 score (none for no score). */
 export function litSegments(score, segments) {
   if (score == null || !Number.isFinite(score)) return 0;

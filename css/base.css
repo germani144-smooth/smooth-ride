@@ -1,9 +1,9 @@
 /* Base: the trip-computer palette, fonts, reset, typography, buttons and the LCD readout
-   used everywhere (dot-matrix digits with the unlit segments ghosted behind them). */
+   used everywhere (7-segment digits with the unlit segments ghosted behind them). */
 @font-face {
-  font-family: "Doto";
-  src: url("../vendor/fonts/doto-900.woff2") format("woff2");
-  font-weight: 900;
+  font-family: "DSEG7 Classic";
+  src: url("../vendor/fonts/dseg7-classic-bold.woff2") format("woff2");
+  font-weight: 700;
   font-display: block;
 }
 
@@ -34,7 +34,7 @@
   --on-red: #1a0c06;
   --smooth: #cdbfa8; /* smooth stretches on the map: quiet, so problems stand out */
   --smooth-cell: #4a3c2a; /* smooth stretches in a drive's strip */
-  --readout: "Doto", ui-monospace, monospace;
+  --readout: "DSEG7 Classic", ui-monospace, monospace;
   --text-font: "Atkinson Hyperlegible", system-ui, sans-serif;
   color-scheme: dark;
 }
@@ -114,11 +114,11 @@ button.danger {
 }
 
 /* A readout: ghost 8s underneath, lit digits on top, both right-aligned so they line up.
-   Decimal points are drawn as one square dot (the font's own point is poor). */
+   The font's decimal point has no width, so "0.4" sits exactly over "8.8". */
 .readout {
   position: relative;
   font-family: var(--readout);
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
   text-align: right;
   white-space: nowrap;
@@ -126,7 +126,6 @@ button.danger {
 
 .readout .ghost {
   color: var(--ghost);
-  --segment: var(--ghost);
 }
 
 .readout .digits {
@@ -134,30 +133,11 @@ button.danger {
   right: 0;
   top: 0;
   color: var(--text);
-  --segment: var(--text);
 }
 
 .readout .digits.hot {
   color: var(--amber);
-  --segment: var(--amber);
   text-shadow: 0 0 18px var(--glow);
-}
-
-.readout .dp {
-  display: inline-block;
-  position: relative;
-  width: 0.3em;
-  color: transparent;
-}
-
-.readout .dp::after {
-  content: "";
-  position: absolute;
-  left: 0.08em;
-  bottom: 0.06em;
-  width: 0.13em;
-  height: 0.13em;
-  background: var(--segment);
 }
 
 @media (prefers-reduced-motion: reduce) {

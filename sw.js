@@ -1,6 +1,6 @@
 // Smooth Ride service worker. Cache-first, own scope and own caches only.
 // VERSION must match js/version.js and package.json (checked by unit tests).
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const PREFIX = "smooth-ride-";
 const CACHE = PREFIX + VERSION;
 
@@ -45,10 +45,10 @@ const PRECACHE = [
   "./js/obd-serial.js",
   "./js/car.js",
   "./js/map.js",
-  "./vendor/fonts/doto-900.woff2",
+  "./vendor/fonts/dseg7-classic-bold.woff2",
   "./vendor/fonts/atkinson-hyperlegible-400.woff2",
   "./vendor/fonts/atkinson-hyperlegible-700.woff2",
-  "./vendor/fonts/LICENSE-doto.txt",
+  "./vendor/fonts/LICENSE-dseg.txt",
   "./vendor/fonts/LICENSE-atkinson-hyperlegible.txt",
   "./vendor/leaflet-1.9.4/leaflet.js",
   "./vendor/leaflet-1.9.4/leaflet.css",

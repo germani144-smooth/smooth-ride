@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ghostFor, displayParts, litSegments, archGeometry, ARCH } from "../../js/core/lcd.js";
+import { ghostFor, litSegments, archGeometry, ARCH } from "../../js/core/lcd.js";
 
 test("ghost digits: every digit an 8, points kept, padded in front", () => {
   assert.equal(ghostFor("82", 2), "88");
@@ -10,11 +10,6 @@ test("ghost digits: every digit an 8, points kept, padded in front", () => {
   assert.equal(ghostFor("0.4", 2), "8.8");
   assert.equal(ghostFor("4.1", 3), "88.8");
   assert.equal(ghostFor("--", 2), "88");
-});
-
-test("display parts: digits and points", () => {
-  assert.deepEqual(displayParts("0.4"), [{ ch: "0" }, { point: true }, { ch: "4" }]);
-  assert.deepEqual(displayParts("54"), [{ ch: "5" }, { ch: "4" }]);
 });
 
 test("lit segments follow the score, none without one", () => {

@@ -1,21 +1,8 @@
 // Draws the trip-computer display: readouts with ghost digits, the arched bar graph and the
 // flat bar. Built from DOM nodes and text only (never HTML strings). Logic in js/core/lcd.js.
-import { ghostFor, displayParts, litSegments, archGeometry, ARCH } from "./core/lcd.js";
+import { ghostFor, litSegments, archGeometry, ARCH } from "./core/lcd.js";
 
 const SVG = "http://www.w3.org/2000/svg";
-
-/** Fill `el` with `text`, drawing decimal points as a square dot. textContent stays `text`. */
-function fill(el, text) {
-  el.replaceChildren(
-    ...displayParts(text).map((part) => {
-      if (!part.point) return document.createTextNode(part.ch);
-      const dot = document.createElement("span");
-      dot.className = "dp";
-      dot.textContent = ".";
-      return dot;
-    }),
-  );
-}
 
 /**
  * Show `text` in a readout. `digits` is the element holding the lit digits; its sibling
@@ -23,9 +10,9 @@ function fill(el, text) {
  */
 export function setReadout(digits, text, minDigits = 2) {
   const value = String(text);
-  fill(digits, value);
+  digits.textContent = value;
   const ghost = digits.parentElement?.querySelector(".ghost");
-  if (ghost) fill(ghost, ghostFor(value, minDigits));
+  if (ghost) ghost.textContent = ghostFor(value, minDigits);
 }
 
 /** A new readout element: { root, digits }. */
