@@ -80,6 +80,9 @@ test("trip score sits next to the instant score; labels are big enough to read d
   await expect(page.getByTestId("trip")).toHaveText("--");
   await expect(page.getByTestId("trip")).toBeVisible();
   await expect(page.getByTestId("trip")).not.toHaveClass(/tone-/);
+  // Course difficulty of the trip so far (shows after 1 km).
+  await expect(page.getByTestId("difficulty")).toHaveText("--");
+  await expect(page.getByTestId("difficulty")).toBeVisible();
   const labels = page.locator(".metric:visible .metric-label");
   expect(await labels.count()).toBeGreaterThanOrEqual(3);
   for (const size of await labels.evaluateAll((els) =>

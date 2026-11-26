@@ -1,6 +1,7 @@
 // Live recording: GPS → analyzer → big numbers. Keeps the screen on while recording.
 import { createAnalyzer } from "./core/analysis.js";
-import { makeDrive, finalizeDrive, packFix } from "./core/drives.js";
+import { makeDrive, finalizeDrive, packFix, unpackFix } from "./core/drives.js";
+import { courseDifficulty } from "./core/difficulty.js";
 import { fmtSpeed, fmtNumber, fmtDuration } from "./core/format.js";
 import { db } from "./db.js";
 import { setReadout, setBars, setTone } from "./lcd.js";
@@ -15,6 +16,7 @@ export function createRecorder({ els, onStopped, car = null }) {
   let sinceSave = 0;
   let startedAt = 0;
   let clock = null;
+  let difficulty = null; // trip so far, 0-10; null under 1 km
 
   const recording = () => watchId !== null;
 
@@ -48,6 +50,7 @@ export function createRecorder({ els, onStopped, car = null }) {
     setTone(l.score, els.score, els.arch, els.bar);
     setReadout(els.trip, trip == null ? "--" : String(trip));
     setTone(trip, els.trip);
+    setReadout(els.difficulty, difficulty == null ? "--" : fmtNumber(difficulty, 1));
     setReadout(els.jerk, fmtNumber(l.rmsJerk, 1));
     setReadout(els.events, String(l.harsh), 1);
     // With the car connected, that tile shows live fuel use instead (js/car.js).
@@ -60,6 +63,7 @@ export function createRecorder({ els, onStopped, car = null }) {
     setBars(null, els.arch, els.bar);
     setTone(null, els.score, els.arch, els.bar, els.trip);
     setReadout(els.trip, "--");
+    setReadout(els.difficulty, "--");
     setReadout(els.jerk, "--");
     setReadout(els.events, "0", 1);
     if (!car?.showsFuel()) setReadout(els.speed, "--", 3);
@@ -81,6 +85,10 @@ export function createRecorder({ els, onStopped, car = null }) {
       return;
     }
     drive.fixes.push(packFix(fix));
+    // Course difficulty of the trip so far; every 10 fixes is plenty (it changes slowly).
+    if (drive.fixes.length % 10 === 0) {
+      difficulty = courseDifficulty(drive.fixes.map(unpackFix))?.difficulty ?? null;
+    }
     setStatus(sample.event ? labelFor(sample.event) : `GPS ±${Math.round(fix.accuracy ?? 0)} m`);
     render();
     if (++sinceSave >= SAVE_EVERY) {
@@ -108,6 +116,7 @@ export function createRecorder({ els, onStopped, car = null }) {
     }
     drive = makeDrive({ source: "live" });
     analyzer = createAnalyzer();
+    difficulty = null;
     sinceSave = 0;
     resetDisplay();
     car?.startCapture(); // car data, if connected now or later during the drive

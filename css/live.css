@@ -6,10 +6,22 @@
   min-height: 100%;
 }
 
+/* Six columns: Trip score and Difficulty take half each; Harsh, Jerk and km/h a third. */
 .live {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
+}
+
+.metric-trip,
+.metric-difficulty {
+  grid-column: span 3;
+}
+
+.metric-harsh,
+.metric-jerk,
+.metric-speed {
+  grid-column: span 2;
 }
 
 .live-main {
@@ -102,6 +114,19 @@
   font-size: clamp(40px, 13vw, 54px);
 }
 
+/* Three per row: smaller so three digits still fit a third of the width. */
+.metric-harsh .readout,
+.metric-jerk .readout,
+.metric-speed .readout {
+  font-size: clamp(28px, 9vw, 38px);
+}
+
+.metric-harsh .metric-label,
+.metric-jerk .metric-label,
+.metric-speed .metric-label {
+  font-size: 1.05rem;
+}
+
 .metric-label {
   color: var(--dim);
   font-size: 1.15rem;
@@ -154,18 +179,18 @@
     min-height: 0;
   }
 
-  /* Score now on the left; trip score, harsh and speed stacked on the right. */
+  /* Score now on the left; trip score, difficulty, harsh and speed stacked on the right. */
   .live {
     grid-template-columns: 1fr 1.1fr;
-    grid-template-rows: repeat(3, 1fr);
-    gap: 6px;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 5px;
     height: 100%;
     min-height: 0;
   }
 
   .live-main {
     grid-column: 1;
-    grid-row: 1 / span 3;
+    grid-row: 1 / span 4;
     padding: 10px 12px;
     display: flex;
     flex-direction: column;
@@ -193,24 +218,26 @@
     font-size: min(24vh, 12.5vw);
   }
 
-  /* Label beside the digits, so three rows fit the strip's height. */
+  /* Label beside the digits, so four rows fit the strip's height. */
   .metric {
+    grid-column: 2;
     flex-direction: row-reverse;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 10px;
-    border-radius: 12px;
-  }
-
-  .metric {
     gap: 8px;
+    padding: 2px 10px;
+    border-radius: 10px;
   }
 
-  .metric .readout {
-    font-size: min(12vh, 7.2vw);
+  .metric .readout,
+  .metric-harsh .readout,
+  .metric-speed .readout {
+    font-size: min(10vh, 7vw);
   }
 
-  .metric-label {
+  .metric-label,
+  .metric-harsh .metric-label,
+  .metric-speed .metric-label {
     margin-top: 0;
     font-size: 1rem;
     white-space: nowrap;

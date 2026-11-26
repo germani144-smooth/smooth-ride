@@ -60,6 +60,7 @@ const recorder = createRecorder({
     status: $("#record-status"),
     score: $('[data-testid="score"]'),
     trip: $('[data-testid="trip"]'),
+    difficulty: $('[data-testid="difficulty"]'),
     jerk: $('[data-testid="jerk"]'),
     events: $('[data-testid="events"]'),
     speed: $('[data-testid="speed"]'),

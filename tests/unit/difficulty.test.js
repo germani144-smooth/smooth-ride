@@ -66,17 +66,40 @@ test("bends make it harder, sharper bends much harder", () => {
     drive(600, { headingAt: (i) => 80 * Math.sin((i * Math.PI) / 10), speedAt: () => 8 }),
   );
   assert.ok(gentle.bends > 0.5, `gentle ${gentle.bends}`);
-  assert.ok(twisty.bends > gentle.bends + 2, `twisty ${twisty.bends} vs ${gentle.bends}`);
+  assert.ok(twisty.bends > gentle.bends + 1, `twisty ${twisty.bends} vs ${gentle.bends}`);
   assert.ok(twisty.bends <= DIFFICULTY.bends.max);
 });
 
-test("speed changes the road forces add up to 3", () => {
+test("fast corners count, a long motorway curve doesn't", () => {
+  // 120 km/h through 2 km-radius curves: about 0.56 m/s² sideways, a lean, not work.
+  // Curve for 30 s every 2 minutes, alternating left and right.
+  let bearing = 0;
+  const curve = [0];
+  for (let i = 1; i <= 1200; i++) {
+    if (i % 120 < 30) bearing += (Math.floor(i / 120) % 2 ? 1 : -1) * (33 / 2000) * (180 / Math.PI);
+    curve.push(bearing);
+  }
+  const motorway = courseDifficulty(drive(1200, { headingAt: (i) => curve[i], speedAt: () => 33 }));
+  assert.equal(motorway.corners, 0);
+  assert.ok(motorway.difficulty <= 1, `motorway ${motorway.difficulty}`);
+  // 90 km/h through 250 m-radius S-bends: about 2.5 m/s² sideways.
+  let heading = 0;
+  const headings = [0];
+  for (let i = 1; i <= 600; i++)
+    headings.push((heading += (Math.floor(i / 15) % 2 ? 1 : -1) * (25 / 250) * (180 / Math.PI)));
+  const fast = courseDifficulty(drive(600, { headingAt: (i) => headings[i], speedAt: () => 25 }));
+  assert.ok(fast.corners > 2.5, `fast corners ${fast.corners}`);
+  assert.ok(fast.corneringLoad > 0.5);
+  assert.ok(fast.difficulty > 5, `fast ${fast.difficulty}`);
+});
+
+test("speed changes the road forces add up to 2", () => {
   // 50 km/h zones alternating with 90 km/h every minute.
   const changing = courseDifficulty(
     drive(600, { speedAt: (i) => (Math.floor(i / 60) % 2 ? 25 : 14) }),
   );
   assert.ok(changing.speed >= 0.8, `speed ${changing.speed}`);
-  assert.ok(changing.speed <= 3);
+  assert.ok(changing.speed <= 2);
   assert.equal(changing.bends, 0);
 });
 
@@ -90,8 +113,10 @@ test("climbing counts, GPS altitude noise doesn't", () => {
     drive(300, { altitudeAt: (i) => (i <= 150 ? i : 300 - i), speedAt: () => 20 }),
   );
   assert.ok(Math.abs(hill.climbPerKm - 25) < 2, `climb ${hill.climbPerKm} m/km`);
-  assert.ok(hill.climb > 1 && hill.climb < 2, `climb ${hill.climb}`);
-  assert.ok(Math.abs(hill.difficulty - (hill.bends + hill.speed + hill.climb)) <= 0.15);
+  assert.ok(hill.climb > 0.5 && hill.climb <= 1, `climb ${hill.climb}`);
+  assert.ok(
+    Math.abs(hill.difficulty - (hill.bends + hill.corners + hill.speed + hill.climb)) <= 0.15,
+  );
 });
 
 test("a gap (tunnel) doesn't turn into a bend", () => {

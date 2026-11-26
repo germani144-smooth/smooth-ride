@@ -21,7 +21,7 @@
 
 .drive-row {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 14px;
   width: 100%;
@@ -35,6 +35,27 @@
 .drive-score {
   font-size: 40px;
   width: 2.1em;
+}
+
+/* Course difficulty, right of the title: a smaller, quiet readout (not amber). */
+.drive-difficulty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.drive-difficulty-readout {
+  font-size: 28px;
+}
+
+.drive-difficulty-readout .digits {
+  color: var(--text);
+}
+
+.drive-difficulty-label {
+  color: var(--dim);
+  font-size: 0.8rem;
+  margin-top: 2px;
 }
 
 .drive-main {

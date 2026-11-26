@@ -57,9 +57,10 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   scores don't depend on phone mounting and both sources compare fairly.
 - When scoring changes, bump `ANALYSIS_VERSION`; stored drives are re-scored on load.
 - Course difficulty (0.0-10.0, `courseDifficulty` in `js/core/difficulty.js`, stored as
-  `summary.course`) is shown next to the score and never changes it. Bends up to 5, speed
-  changes up to 3, climb up to 2; every number lives in `DIFFICULTY`. Changing it also
-  bumps `ANALYSIS_VERSION`.
+  `summary.course`) is shown next to the score and never changes it: in History per drive,
+  and live for the trip so far. Bends 3.5, fast corners 3.5, speed changes 2, climb 1; every
+  number lives in `DIFFICULTY`. Calibration: Madeira drives about 6-7, a Danish motorway
+  about 1. Changing it also bumps `ANALYSIS_VERSION`.
 - Never reload the page for an update while a drive is recording.
 - Swipe between tabs behaves exactly like Lift Log's. Every number lives in `SWIPE` in
   `js/core/swipe.js` (unit tested); `js/swipe.js` listens on the whole document with passive
@@ -103,7 +104,7 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   quiet. Its geometry is `archGeometry` in `js/core/lcd.js` (also used for the app icon).
 - Two tabs, Drive and History; Settings is the cog in the header (not a tab, not swiped to).
 - Start/Stop sits at the bottom of the Drive tab, in thumb reach. The split-screen strip
-  shows score (with a flat bar), Trip, Harsh and km/h stacked (labels beside the digits),
+  shows score (with a flat bar), Trip, Difficulty, Harsh and km/h stacked (labels beside the digits),
   and Stop; no header, no jerk. Labels on the live view stay big (about 1.15rem).
 - No middle-dot meta strings, no all-caps labels; sentence case.
 
