@@ -1,5 +1,5 @@
 // Car (OBD) data in drives: compact rows, the drive's fuel summary and live consumption.
-import { ROW } from "./elm.js";
+import { ROW, ROW_LENGTH_BEFORE_PEDAL } from "./elm.js";
 
 const IDX = Object.fromEntries(ROW.map((k, i) => [k, i]));
 const MAX_GAP = 5; // s; longer gaps between rows are not integrated
@@ -17,6 +17,7 @@ export function packRow(row) {
     r1(row.load),
     row.coolant == null ? null : Math.round(row.coolant),
     row.fuelRate == null ? null : Math.round(row.fuelRate * 1000) / 1000,
+    r1(row.pedal),
   ];
 }
 
@@ -26,7 +27,8 @@ export function isValidRows(rows) {
     rows.every(
       (r) =>
         Array.isArray(r) &&
-        r.length === ROW.length &&
+        r.length >= ROW_LENGTH_BEFORE_PEDAL &&
+        r.length <= ROW.length &&
         Number.isFinite(r[0]) &&
         r.slice(1).every((x) => x === null || Number.isFinite(x)),
     )
@@ -54,7 +56,8 @@ export function summarizeCar(rows, distance) {
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     const rpm = r[IDX.rpm];
-    const thr = r[IDX.throttle];
+    // Throttle stats: the valve when it was read, else the pedal (cars with PID 49 skip 11).
+    const thr = r[IDX.throttle] ?? r[IDX.pedal] ?? null;
     const cool = r[IDX.coolant];
     if (rpm != null) {
       rpmSum += rpm;
@@ -121,6 +124,28 @@ export function createConsumption({ tau = 3 } = {}) {
       if (rate == null) return null;
       if (speed != null && speed >= 5) return { value: (rate / speed) * 100, unit: "L/100" };
       return { value: rate, unit: "L/h" };
+    },
+  };
+}
+
+/**
+ * Throttle as the driver feels it, 0-100 %, from the raw pedal or throttle-valve reading.
+ * Neither reads 0 at rest (a pedal sensor sits around 15 %, a valve opens for idle) nor 100 at
+ * the floor, so: rest is the lowest reading seen, full the highest, but at least `span` above
+ * rest until the pedal has actually been floored. Feed raw readings one at a time.
+ */
+export const THROTTLE_SPAN = 65; // raw % points between rest and floor until seen
+
+export function createThrottleScale({ span = THROTTLE_SPAN } = {}) {
+  let rest = null;
+  let highest = null;
+  return {
+    push(raw) {
+      if (raw == null || !Number.isFinite(raw)) return null;
+      rest = rest == null ? raw : Math.min(rest, raw);
+      highest = highest == null ? raw : Math.max(highest, raw);
+      const full = Math.max(highest, rest + span);
+      return Math.max(0, Math.min(100, ((raw - rest) / (full - rest)) * 100));
     },
   };
 }

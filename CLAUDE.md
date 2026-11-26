@@ -80,7 +80,10 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   filter). The protocol is pure in `js/core/elm.js` (transport injected) and fuel maths in
   `js/core/car.js`; both are unit tested against the simulated clone in `tests/fake-elm.js`,
   which the browser tests also inject as a fake serial port. OBD rows are stored on the
-  drive as `obd`; the score never uses them (GPS only).
+  drive as `obd`; the score never uses them (GPS only). Rows grew a 9th field (`pedal`) in
+  1.4; 8-field rows stay valid. On the Drive tab a connected car adds the throttle bar
+  (pedal PID 49, else throttle valve 11, scaled by `createThrottleScale`) and puts fuel use
+  in the jerk tile. No rpm on the Drive tab, no brake bar (OBD-II has no brake reading).
 - The page is pinned to the screen (`body { position: fixed; inset: 0 }`); only `<main>`
   scrolls.
 - Live view must work in Android split screen next to Google Maps (short strip, big numbers);

@@ -51,10 +51,10 @@ export function createRecorder({ els, onStopped, car = null }) {
     setReadout(els.trip, trip == null ? "--" : String(trip));
     setTone(trip, els.trip);
     setReadout(els.difficulty, difficulty == null ? "--" : fmtNumber(difficulty, 1));
-    setReadout(els.jerk, fmtNumber(l.rmsJerk, 1));
+    // With the car connected, the jerk tile shows live fuel use instead (js/car.js).
+    if (!car?.showsFuel()) setReadout(els.jerk, fmtNumber(l.rmsJerk, 1));
     setReadout(els.events, String(l.harsh), 1);
-    // With the car connected, that tile shows live fuel use instead (js/car.js).
-    if (!car?.showsFuel()) setReadout(els.speed, fmtSpeed(l.speed), 3);
+    setReadout(els.speed, fmtSpeed(l.speed), 3);
   }
 
   function resetDisplay() {
@@ -64,9 +64,9 @@ export function createRecorder({ els, onStopped, car = null }) {
     setTone(null, els.score, els.arch, els.bar, els.trip);
     setReadout(els.trip, "--");
     setReadout(els.difficulty, "--");
-    setReadout(els.jerk, "--");
+    if (!car?.showsFuel()) setReadout(els.jerk, "--");
     setReadout(els.events, "0", 1);
-    if (!car?.showsFuel()) setReadout(els.speed, "--", 3);
+    setReadout(els.speed, "--", 3);
   }
 
   async function onPosition(pos) {

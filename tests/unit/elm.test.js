@@ -9,7 +9,13 @@ import {
   createElmSession,
   PETROL,
 } from "../../js/core/elm.js";
-import { summarizeCar, packRow, isValidRows, createConsumption } from "../../js/core/car.js";
+import {
+  summarizeCar,
+  packRow,
+  isValidRows,
+  createConsumption,
+  createThrottleScale,
+} from "../../js/core/car.js";
 import { createFakeElm } from "../fake-elm.js";
 
 const close = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
@@ -70,7 +76,8 @@ test("session: init against a clone, then poll a full row", async () => {
   assert.ok(info.supported.includes("0C"));
   assert.deepEqual(log.slice(0, 7), ["ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATAT1", "ATSP0"]);
   assert.equal(s.hasFuel, true);
-  assert.deepEqual(s.plan(), { fast: ["0D", "0C", "11", "04", "10"], slow: ["05"] });
+  assert.deepEqual(s.plan(), { fast: ["0D", "0C", "11", "10"], slow: ["05", "04"] });
+  assert.equal(s.hasThrottle, true);
 
   const row = await s.poll();
   assert.equal(row.t, 1000);
@@ -79,6 +86,51 @@ test("session: init against a clone, then poll a full row", async () => {
   close(row.maf, 6.2);
   assert.equal(row.coolant, 88);
   close(row.fuelRate, (6.2 * 3600) / (14.7 * 740), 1e-6);
+  close(row.load, 35, 0.5); // engine load is read on the slow cycle
+  assert.equal(row.pedal, null); // this car has no pedal PID
+});
+
+test("session reads the accelerator pedal instead of the throttle valve when it can", async () => {
+  // 49 sits in the 41-60 block, reached via 0120 → "40" → 0140.
+  const elm = createFakeElm({
+    supported: ["04", "05", "0C", "0D", "10", "11", "20", "40", "49"],
+    car: { pedal: 40 },
+  });
+  const s = createElmSession(transportFor(elm));
+  await s.init();
+  assert.deepEqual(s.plan().fast, ["0D", "0C", "49", "10"]);
+  const row = await s.poll();
+  close(row.pedal, 40, 0.5);
+  assert.equal(row.throttle, null);
+});
+
+test("throttle scale: rest reads 0 %, the floor 100 %, never outside 0-100", () => {
+  const scale = createThrottleScale();
+  assert.equal(scale.push(15), 0); // pedal at rest
+  close(scale.push(47.5), 50, 0.01); // half of the 65-point default span
+  assert.equal(scale.push(80), 100);
+  // Floored further than the default span: full moves up.
+  assert.equal(scale.push(90), 100);
+  close(scale.push(52.5), 50, 0.01);
+  // A lower rest found later (the first reading had the foot on the pedal).
+  assert.equal(scale.push(12), 0);
+  assert.equal(scale.push(null), null);
+  assert.ok(scale.push(200) <= 100);
+});
+
+test("old 8-element car rows still validate and summarize", () => {
+  const old = [
+    [0, 50, 1800, 6.2, 18, 35, 88, 2.05],
+    [1000, 50, 1800, 6.2, 22, 35, 88, 2.05],
+  ];
+  assert.ok(isValidRows(old));
+  assert.equal(summarizeCar(old, 1000).avgThrottle, 20);
+  const pedalOnly = [
+    [0, 50, 1800, 6.2, null, 35, 88, 2.05, 30],
+    [1000, 50, 1800, 6.2, null, 35, 88, 2.05, 40],
+  ];
+  assert.ok(isValidRows(pedalOnly));
+  assert.equal(summarizeCar(pedalOnly, 1000).avgThrottle, 35);
 });
 
 test("session prefers the car's fuel-rate PID when it has one", async () => {

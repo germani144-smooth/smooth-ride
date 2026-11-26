@@ -1,9 +1,13 @@
-// Car connection: Connect button, polling loop, live consumption, rows for the drive.
+// Car connection: Connect button, polling loop, the throttle bar and live consumption on the
+// Drive tab, rows for the drive.
 import { createElmSession } from "./core/elm.js";
-import { packRow, createConsumption } from "./core/car.js";
+import { packRow, createConsumption, createThrottleScale } from "./core/car.js";
 import { fmtNumber } from "./core/format.js";
 import { serialAvailable, openAdapter } from "./obd-serial.js";
-import { setReadout } from "./lcd.js";
+import { setReadout, buildBar, setBars } from "./lcd.js";
+
+const THROTTLE_SEGMENTS = 20;
+const JERK_LABEL = "Jerk m/s³";
 
 const MIN_CYCLE_MS = 250; // don't hammer the adapter faster than this
 
@@ -13,6 +17,7 @@ export function createCar({ els }) {
   let running = false;
   let capture = null; // rows for the drive being recorded
   let consumption = createConsumption();
+  let throttleScale = createThrottleScale();
   let showingFuel = false;
   let misses = 0;
 
@@ -22,15 +27,33 @@ export function createCar({ els }) {
     els.status.textContent = text;
   }
 
+  buildBar(els.throttleBar, THROTTLE_SEGMENTS);
+
   function showFuel(on) {
     showingFuel = on;
     if (!on) {
-      els.metricLabel.textContent = "km/h";
-      setReadout(els.metric, "--", 3);
+      els.metricLabel.textContent = JERK_LABEL;
+      setReadout(els.metric, "--");
     }
   }
 
+  /** The Drive tab's car layout: throttle bar under the score (only if the car reports it). */
+  function showCar(on) {
+    els.live.classList.toggle("has-car", on && Boolean(session?.hasThrottle));
+    els.throttle.hidden = !(on && session?.hasThrottle);
+    setBars(null, els.throttleBar);
+    els.throttleValue.textContent = "--";
+  }
+
+  function renderThrottle(row) {
+    const percent = throttleScale.push(row.pedal ?? row.throttle);
+    if (percent == null) return;
+    setBars(percent, els.throttleBar);
+    els.throttleValue.textContent = `${Math.round(percent)}%`;
+  }
+
   function renderRow(row) {
+    renderThrottle(row);
     if (!session.hasFuel) return;
     const c = consumption.push(row);
     if (!c) return;
@@ -53,11 +76,10 @@ export function createCar({ els }) {
         misses = 0;
         if (capture) capture.push(packRow(row));
         renderRow(row);
-        els.rpm.textContent = row.rpm == null ? "" : `${Math.round(row.rpm)} rpm`;
       } else if (++misses === 5) {
         setStatus("Car not answering (ignition off?)");
       }
-      if (misses === 0 && els.status.textContent.startsWith("Car not")) setStatus("Car connected");
+      if (misses === 0 && els.status.textContent.startsWith("Car not")) setStatus("Car connected.");
       const wait = MIN_CYCLE_MS - (Date.now() - started);
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     }
@@ -78,10 +100,12 @@ export function createCar({ els }) {
       running = true;
       misses = 0;
       consumption = createConsumption();
+      throttleScale = createThrottleScale();
       els.button.textContent = "Disconnect car";
+      showCar(true);
       setStatus(
-        `Car connected${info.version ? " · " + info.version : ""}` +
-          (session.hasFuel ? "" : " · this car doesn't report fuel use"),
+        `Car connected${info.version ? ` (${info.version})` : ""}.` +
+          (session.hasFuel ? "" : " This car doesn't report fuel use."),
       );
       loop();
     } catch (err) {
@@ -102,7 +126,7 @@ export function createCar({ els }) {
     running = false;
     link = null;
     showFuel(false);
-    els.rpm.textContent = "";
+    showCar(false);
     els.button.textContent = "Connect car";
     setStatus("Car disconnected.");
   }
@@ -113,7 +137,7 @@ export function createCar({ els }) {
     link = null;
     await l?.close();
     showFuel(false);
-    els.rpm.textContent = "";
+    showCar(false);
     els.button.textContent = "Connect car";
     setStatus("");
   }
@@ -122,7 +146,7 @@ export function createCar({ els }) {
 
   return {
     connected,
-    /** The live metric shows fuel instead of GPS speed while this is true. */
+    /** The jerk tile shows fuel use instead while this is true. */
     showsFuel: () => running && showingFuel,
     startCapture() {
       capture = [];

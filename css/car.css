@@ -17,15 +17,101 @@
   min-width: 0;
 }
 
+/* Throttle bar on the Drive tab while the car is connected: label, 20 segments, percent. */
+.throttle {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 5.2em 1fr 2.8em;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+}
+
+.throttle[hidden] {
+  display: none;
+}
+
+.throttle-label {
+  color: var(--dim);
+  font-size: 1.15rem;
+}
+
+.throttle-value {
+  color: var(--dim);
+  font-size: 1rem;
+  text-align: right;
+}
+
+.throttle-bar {
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  gap: 3px;
+  height: 22px;
+}
+
+.throttle-bar i {
+  background: var(--ghost);
+  border-radius: 2px;
+}
+
+.throttle-bar i.lit {
+  background: var(--amber);
+  box-shadow: 0 0 6px var(--glow);
+}
+
+/* With the car connected the arch gives up a little height for the throttle bar. */
+.live.has-car .arch {
+  max-height: 150px;
+}
+
+.live.has-car .readout-main {
+  font-size: clamp(70px, 24vw, 104px);
+}
+
 .car-stats h3 {
   font-size: 0.9rem;
   color: var(--dim);
   margin: 4px 0 0;
 }
 
-/* The split-screen strip keeps only the numbers and Start/Stop. */
+/* The split-screen strip keeps only the numbers and Start/Stop; the throttle bar replaces
+   the flat bar under the score (no label or percent: there's no room). */
 @media (max-height: 480px) {
   .car-bar {
     display: none;
+  }
+
+  .live.has-car .live-main {
+    grid-row: 1 / span 3;
+  }
+
+  .live.has-car .sbar {
+    display: none;
+  }
+
+  .throttle {
+    grid-column: 1;
+    grid-row: 4;
+    grid-template-columns: 1fr;
+    padding: 6px 10px;
+    border-radius: 10px;
+  }
+
+  .throttle-label,
+  .throttle-value {
+    display: none;
+  }
+
+  .throttle-bar {
+    height: 12px;
+    gap: 2px;
+  }
+
+  .live.has-car .readout-main {
+    font-size: min(24vh, 18vw);
+  }
+
+  .live.has-car .readout-main.wide {
+    font-size: min(20vh, 12.5vw);
   }
 }

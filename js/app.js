@@ -47,9 +47,12 @@ const car = createCar({
   els: {
     button: $("#car-btn"),
     status: $("#car-status"),
-    rpm: $("#car-rpm"),
-    metric: $('[data-testid="speed"]'),
-    metricLabel: $('[data-testid="speed-label"]'),
+    live: $('[data-testid="live"]'),
+    throttle: $('[data-testid="throttle"]'),
+    throttleBar: $("#throttle-bar"),
+    throttleValue: $('[data-testid="throttle-value"]'),
+    metric: $('[data-testid="jerk"]'),
+    metricLabel: $('[data-testid="jerk-label"]'),
   },
 });
 

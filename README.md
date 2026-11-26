@@ -96,8 +96,18 @@ like Torque does:
    first time; after that it reconnects straight away).
 3. Tap **Start drive** as usual.
 
-While connected, the last live tile shows **fuel use** instead of speed: L/100 km while
-moving, L/h while standing still. RPM is shown next to the Connect car button. Each drive recorded with
+While connected, the Drive tab changes a little:
+
+- A **Throttle** bar sits under the score, 0-100 %. It reads the accelerator pedal when the
+  car reports it (most modern cars do), otherwise the throttle valve. Neither reads 0 at
+  rest or 100 at the floor, so the app scales it: the lowest reading seen is 0 %, the
+  highest is 100 %, and until you've floored it, 100 % is 65 points above rest. A cheap
+  adapter answers 2 to 4 times a second, so the bar moves in small steps. In the
+  split-screen strip it replaces the flat bar under the score.
+- The **Jerk** tile shows **fuel use** instead: L/100 km while moving, L/h while standing
+  still. Speed stays on km/h.
+
+There is no brake bar: standard OBD-II has no brake pedal reading. Each drive recorded with
 the car connected gets a **Car data** section: L/100 km, litres used, litres burned idling,
 average and max RPM and throttle, and how much of the drive the engine was cold (under
 70 °C, when it burns more).
@@ -234,14 +244,14 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `css/history.css`       | History: tools, drive list, each drive's firm/harsh strip, stats                   |
 | `css/map.css`           | Drive map, legend, dark Leaflet controls                                           |
 | `css/profile.css`       | Overall score card                                                                 |
-| `css/car.css`           | Connect car bar and Car data stats                                                 |
+| `css/car.css`           | Connect car bar, throttle bar and car layout on the Drive tab, Car data stats      |
 | `css/settings.css`      | Settings cards (opened with the cog)                                               |
 | `js/app.js`             | Starts everything: tabs and the cog, backup Export/Import, updates                 |
 | `js/version.js`         | The app version (must match `sw.js` and `package.json`)                            |
 | `js/live.js`            | Recording: GPS → analyzer → live numbers, wake lock, saving the drive              |
 | `js/drives.js`          | History tab: overall score, drive list and strips, details, GPX import, demo       |
 | `js/map.js`             | Loads Leaflet on demand, draws the tiles, route, events and pins                   |
-| `js/car.js`             | Connect car button, OBD polling loop, live fuel use, rows for the drive            |
+| `js/car.js`             | Connect car button, OBD polling loop, throttle bar, live fuel use, drive rows      |
 | `js/obd-serial.js`      | Bluetooth Classic link to the ELM327 through Web Serial                            |
 | `js/swipe.js`           | Swipe gesture wiring (passive touch listeners)                                     |
 | `js/lcd.js`             | Draws readouts with ghost digits, the arch and the flat bar; sets score colours    |
@@ -256,7 +266,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/core/profile.js`    | Overall score: drives weighted by distance                                         |
 | `js/core/demo.js`       | The simulated demo drive                                                           |
 | `js/core/elm.js`        | ELM327 protocol: init, reply parsing, PID decoding, polling session                |
-| `js/core/car.js`        | Car data in drives: compact rows, fuel and RPM summary, live consumption           |
+| `js/core/car.js`        | Car data: compact rows, fuel and RPM summary, live consumption, throttle scale     |
 | `js/core/swipe.js`      | Swipe numbers and decisions (start, cancel, follow, fade, switch)                  |
 | `js/core/lcd.js`        | Display logic: ghost digits, lit segments, the arch's geometry, score colours      |
 | `js/core/format.js`     | Display formatting: distance, duration, speed, score colour                        |

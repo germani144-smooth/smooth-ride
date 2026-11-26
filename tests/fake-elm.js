@@ -10,6 +10,7 @@ export function createFakeElm({ car = {}, supported = null, noCar = false } = {}
     rpm: 1800,
     maf: 6.2,
     throttle: 18,
+    pedal: 15,
     load: 35,
     coolant: 88,
     ...car,
@@ -50,6 +51,8 @@ export function createFakeElm({ car = {}, supported = null, noCar = false } = {}
         return hex(v.maf * 100, 2);
       case "11":
         return hex((v.throttle * 255) / 100);
+      case "49":
+        return hex((v.pedal * 255) / 100);
       case "5E":
         return hex(v.fuelRate * 20, 2);
       default:
@@ -91,5 +94,10 @@ export function createFakeElm({ car = {}, supported = null, noCar = false } = {}
     return echo + body + "\r\r>";
   }
 
-  return { respond, values, state };
+  /** Change what the car reports from now on (e.g. press the pedal). */
+  function set(changes) {
+    Object.assign(values, changes);
+  }
+
+  return { respond, values, state, set };
 }

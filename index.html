@@ -59,6 +59,11 @@
             <div class="sbar" id="sbar" aria-hidden="true"></div>
             <div class="lcd-caption"><span>Smoothness now</span><span>last 10 s</span></div>
           </div>
+          <div class="lcd throttle" data-testid="throttle" hidden>
+            <span class="throttle-label">Throttle</span>
+            <div class="throttle-bar" id="throttle-bar" aria-hidden="true"></div>
+            <span class="throttle-value" data-testid="throttle-value">--</span>
+          </div>
           <div class="lcd metric metric-trip">
             <div class="readout">
               <span class="ghost" aria-hidden="true"></span
@@ -85,7 +90,7 @@
               <span class="ghost" aria-hidden="true"></span
               ><span class="digits" data-testid="jerk">--</span>
             </div>
-            <span class="metric-label">Jerk m/s³</span>
+            <span class="metric-label" data-testid="jerk-label">Jerk m/s³</span>
           </div>
           <div class="lcd metric metric-speed">
             <div class="readout">
@@ -99,7 +104,6 @@
           <button type="button" id="car-btn" data-testid="car-connect">Connect car</button>
           <span class="car-info">
             <span class="status" id="car-status" role="status"></span>
-            <span class="status" id="car-rpm" data-testid="car-rpm"></span>
           </span>
         </div>
         <div class="control">

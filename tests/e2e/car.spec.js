@@ -58,17 +58,24 @@ test.beforeEach(async ({ page }) => {
   }
 });
 
-test("connects to the adapter and shows live fuel use", async ({ page }) => {
+test("connects to the adapter: throttle bar, live fuel use in the jerk tile, no rpm", async ({
+  page,
+}) => {
   test.skip(test.info().project.name === "split-screen", "Connect is done in full view");
   await installFakeAdapter(page);
   await page.goto("./");
   await page.getByTestId("car-connect").click();
-  await expect(page.locator("#car-status")).toHaveText("Car connected · ELM327 v1.5");
+  await expect(page.locator("#car-status")).toHaveText("Car connected (ELM327 v1.5).");
   await expect(page.getByTestId("car-connect")).toHaveText("Disconnect car");
   // 6.2 g/s of air at 50 km/h: 6.2·3600/(14.7·740) = 2.05 L/h → 4.1 L/100 km.
-  await expect(page.getByTestId("speed-label")).toHaveText("L/100");
-  await expect(page.getByTestId("speed")).toHaveText("4.1");
-  await expect(page.getByTestId("car-rpm")).toHaveText("1800 rpm");
+  await expect(page.getByTestId("jerk-label")).toHaveText("L/100");
+  await expect(page.getByTestId("jerk")).toHaveText("4.1");
+  await expect(page.getByTestId("speed-label")).toHaveText("km/h");
+  // Throttle bar: the fake car holds the valve steady, so it reads as rest (0 %).
+  await expect(page.getByTestId("throttle")).toBeVisible();
+  await expect(page.getByTestId("throttle-value")).toHaveText("0%");
+  await expect(page.locator("#throttle-bar i")).toHaveCount(20);
+  await expect(page.getByText(/rpm/)).toHaveCount(0);
   const cmds = await page.evaluate(() => window.__elmCommands);
   expect(cmds.slice(0, 8)).toEqual([
     "ATZ",
@@ -83,7 +90,25 @@ test("connects to the adapter and shows live fuel use", async ({ page }) => {
 
   await page.getByTestId("car-connect").click();
   await expect(page.getByTestId("car-connect")).toHaveText("Connect car");
-  await expect(page.getByTestId("speed-label")).toHaveText("km/h");
+  await expect(page.getByTestId("jerk-label")).toHaveText("Jerk m/s³");
+  await expect(page.getByTestId("throttle")).toBeHidden();
+});
+
+test("the throttle bar follows the accelerator pedal", async ({ page }) => {
+  test.skip(test.info().project.name === "split-screen", "Connect is done in full view");
+  await installFakeAdapter(page, {
+    supported: ["04", "05", "0C", "0D", "10", "11", "20", "40", "49"],
+  });
+  await page.goto("./");
+  await page.getByTestId("car-connect").click();
+  await expect(page.getByTestId("throttle-value")).toHaveText("0%"); // pedal at rest, 15 %
+  // Press to 47.5 % raw: half way between rest and the default floor (15 + 65).
+  await page.evaluate(() => window.__elm.set({ pedal: 47.5 }));
+  await expect(page.getByTestId("throttle-value")).toHaveText("50%");
+  await expect(page.locator("#throttle-bar i.lit")).toHaveCount(10);
+  const commands = await page.evaluate(() => window.__elmCommands);
+  expect(commands).toContain("0149");
+  expect(commands).not.toContain("0111");
 });
 
 test("shows L/h while standing still", async ({ page }) => {
@@ -91,8 +116,8 @@ test("shows L/h while standing still", async ({ page }) => {
   await installFakeAdapter(page, { car: { speed: 0, rpm: 800, maf: 2.5 } });
   await page.goto("./");
   await page.getByTestId("car-connect").click();
-  await expect(page.getByTestId("speed-label")).toHaveText("L/h");
-  await expect(page.getByTestId("speed")).toHaveText("0.8"); // 2.5·3600/10878
+  await expect(page.getByTestId("jerk-label")).toHaveText("L/h");
+  await expect(page.getByTestId("jerk")).toHaveText("0.8"); // 2.5·3600/10878
 });
 
 test("a recorded drive keeps the car data", async ({ page, context }) => {
@@ -108,8 +133,9 @@ test("a recorded drive keeps the car data", async ({ page, context }) => {
     await page.waitForTimeout(350);
     await context.setGeolocation({ latitude: 0.5 + (i * 5) / 111195, longitude: 0.5 });
   }
-  // The speed tile shows fuel while the car is connected, even while recording.
-  await expect(page.getByTestId("speed-label")).toHaveText("L/100");
+  // The jerk tile shows fuel while the car is connected, even while recording.
+  await expect(page.getByTestId("jerk-label")).toHaveText("L/100");
+  await expect(page.getByTestId("speed")).not.toHaveText("--");
   await page.getByTestId("record").click();
   await expect(page.locator("#record-status")).toContainText("Saved");
 

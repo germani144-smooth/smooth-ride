@@ -17,11 +17,14 @@ export const PIDS = {
   "0D": { key: "speed", decode: ([a]) => a }, // km/h
   10: { key: "maf", decode: ([a, b]) => (a * 256 + b) / 100 }, // g/s
   11: { key: "throttle", decode: ([a]) => (a * 100) / 255 }, // %
+  49: { key: "pedal", decode: ([a]) => (a * 100) / 255 }, // % accelerator pedal (D)
   "5E": { key: "fuelRate", decode: ([a, b]) => (a * 256 + b) / 20 }, // L/h
 };
 
-// One stored row per poll cycle (compact, like GPS fixes).
-export const ROW = ["t", "speed", "rpm", "maf", "throttle", "load", "coolant", "fuelRate"];
+// One stored row per poll cycle (compact, like GPS fixes). "pedal" was added in 1.4; older
+// rows have one element less and read it as null.
+export const ROW = ["t", "speed", "rpm", "maf", "throttle", "load", "coolant", "fuelRate", "pedal"];
+export const ROW_LENGTH_BEFORE_PEDAL = 8;
 
 const ERRORS = [
   "NO DATA",
@@ -140,12 +143,17 @@ export function createElmSession(transport, { now = () => Date.now() } = {}) {
     return { version, supported: [...supported].sort() };
   }
 
-  /** The PIDs read every cycle, and the slow ones (every 10th cycle). */
+  /**
+   * The PIDs read every cycle, and the slow ones (every 10th cycle). The live throttle bar
+   * reads the accelerator pedal (49) when the car has it, else the throttle valve (11); engine
+   * load is slow, so each cycle stays short and the bar quick.
+   */
   function plan() {
-    const fast = ["0D", "0C", "11", "04"].filter((p) => supported.has(p));
+    const input = supported.has("49") ? "49" : "11";
+    const fast = ["0D", "0C", input].filter((p) => supported.has(p));
     if (supported.has("5E")) fast.push("5E");
     else if (supported.has("10")) fast.push("10");
-    const slow = ["05"].filter((p) => supported.has(p));
+    const slow = ["05", "04"].filter((p) => supported.has(p));
     return { fast, slow };
   }
 
@@ -158,11 +166,15 @@ export function createElmSession(transport, { now = () => Date.now() } = {}) {
   }
 
   let lastCoolant = null;
+  let lastLoad = null;
   async function poll() {
     const { fast, slow } = plan();
     const v = {};
     for (const pid of fast) v[PIDS[pid].key] = await read(pid);
-    if (cycle % 10 === 0) for (const pid of slow) lastCoolant = await read(pid);
+    if (cycle % 10 === 0) {
+      if (slow.includes("05")) lastCoolant = await read("05");
+      if (slow.includes("04")) lastLoad = await read("04");
+    }
     cycle++;
     const row = {
       t: now(),
@@ -170,9 +182,10 @@ export function createElmSession(transport, { now = () => Date.now() } = {}) {
       rpm: v.rpm ?? null,
       maf: v.maf ?? null,
       throttle: v.throttle ?? null,
-      load: v.load ?? null,
+      load: lastLoad,
       coolant: lastCoolant,
       fuelRate: fuelRateLh({ fuelRate: v.fuelRate ?? null, maf: v.maf ?? null }),
+      pedal: v.pedal ?? null,
     };
     return row;
   }
@@ -183,6 +196,10 @@ export function createElmSession(transport, { now = () => Date.now() } = {}) {
     plan,
     get supported() {
       return supported;
+    },
+    /** Whether the throttle bar has anything to show (pedal or throttle valve). */
+    get hasThrottle() {
+      return supported.has("49") || supported.has("11");
     },
     /** Whether this car can give fuel use at all. */
     get hasFuel() {
