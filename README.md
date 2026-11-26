@@ -68,13 +68,16 @@ to leave.
 Mount the phone, tap **Start drive** at the bottom of the Drive tab, then open Google Maps in
 split screen. The Drive tab shows:
 
-- **Smoothness:** a 0-100 score over the last 10 seconds, with the arched bar graph above it.
+- **Smoothness now:** a 0-100 score over the last 10 seconds, with the arched bar graph above it.
+- **Trip score:** the score of the whole drive so far, scored the same way as the saved drive
+  (it shows once you've driven 30 seconds and 0.2 km).
 - **Jerk:** how abruptly acceleration changes, RMS over the last 10 s, in m/s³. Lower is smoother.
 - **Harsh:** harsh brakes, harsh accelerations and sharp corners so far this drive.
 - **km/h:** current speed (fuel use instead, with the car connected).
 
-In the split-screen strip it keeps the smoothness score (with a flat bar under it), Harsh,
-km/h and Stop, big enough to read at a glance; jerk is left out there. The header shows how
+Both scores turn red below 70 and green above 90 (amber in between), and the arch follows
+the score now. In the split-screen strip it keeps the score now (with a flat bar under it),
+Trip, Harsh, km/h and Stop, big enough to read at a glance; jerk is left out there. The header shows how
 long you've been recording.
 
 The screen stays on while recording (the app must stay visible, which split screen does).
@@ -211,7 +214,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/car.js`             | Connect car button, OBD polling loop, live fuel use, rows for the drive            |
 | `js/obd-serial.js`      | Bluetooth Classic link to the ELM327 through Web Serial                            |
 | `js/swipe.js`           | Swipe gesture wiring (passive touch listeners)                                     |
-| `js/lcd.js`             | Draws readouts with ghost digits, the arch and the flat bar                        |
+| `js/lcd.js`             | Draws readouts with ghost digits, the arch and the flat bar; sets score colours    |
 | `js/db.js`              | IndexedDB storage for drives (`smooth-ride.db`)                                    |
 | `js/core/analysis.js`   | The analyzer: speed, acceleration, jerk, harsh events, score                       |
 | `js/core/geo.js`        | Distance and bearing between coordinates                                           |
@@ -224,7 +227,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/core/elm.js`        | ELM327 protocol: init, reply parsing, PID decoding, polling session                |
 | `js/core/car.js`        | Car data in drives: compact rows, fuel and RPM summary, live consumption           |
 | `js/core/swipe.js`      | Swipe numbers and decisions (start, cancel, follow, fade, switch)                  |
-| `js/core/lcd.js`        | Display logic: ghost digits, lit segments, the arch's geometry                     |
+| `js/core/lcd.js`        | Display logic: ghost digits, lit segments, the arch's geometry, score colours      |
 | `js/core/format.js`     | Display formatting: distance, duration, speed, score colour                        |
 | `js/core/backup.js`     | Versioned Export/Import file format                                                |
 | `js/core/storage.js`    | Prefixed `smooth-ride.` key/value storage                                          |

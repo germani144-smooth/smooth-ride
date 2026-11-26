@@ -59,6 +59,7 @@ const recorder = createRecorder({
     toggle: $("#record-btn"),
     status: $("#record-status"),
     score: $('[data-testid="score"]'),
+    trip: $('[data-testid="trip"]'),
     jerk: $('[data-testid="jerk"]'),
     events: $('[data-testid="events"]'),
     speed: $('[data-testid="speed"]'),

@@ -46,3 +46,14 @@ test("arch: scale 0..100 left to right, inside the drawing", () => {
   for (let i = 1; i < labels.length; i++) assert.ok(labels[i].x > labels[i - 1].x);
   for (const l of labels) assert.ok(l.x > 10 && l.x < width - 10 && l.y < height - 8);
 });
+
+test("score tones: red below 70, green above 90, amber between (70 and 90 included)", async () => {
+  const { scoreTone } = await import("../../js/core/lcd.js");
+  assert.equal(scoreTone(69), "low");
+  assert.equal(scoreTone(70), "mid");
+  assert.equal(scoreTone(90), "mid");
+  assert.equal(scoreTone(91), "high");
+  assert.equal(scoreTone(0), "low");
+  assert.equal(scoreTone(100), "high");
+  assert.equal(scoreTone(null), null);
+});

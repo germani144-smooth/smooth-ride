@@ -8,7 +8,7 @@
 
 .live {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
@@ -32,6 +32,19 @@
   filter: drop-shadow(0 0 4px var(--glow));
 }
 
+/* The arch and the flat bar take the instant score's colour. */
+.arch.tone-low polygon.lit,
+.sbar.tone-low i.lit {
+  fill: var(--red);
+  background: var(--red);
+}
+
+.arch.tone-high polygon.lit,
+.sbar.tone-high i.lit {
+  fill: var(--green);
+  background: var(--green);
+}
+
 /* The scale is plain text: 7-segment digits that small don't read. */
 .arch text {
   fill: var(--dim);
@@ -50,11 +63,12 @@
   text-shadow: 0 0 18px var(--glow);
 }
 
+/* Labels are read at a glance while driving: keep them big. */
 .lcd-caption {
   display: flex;
   justify-content: space-between;
   color: var(--dim);
-  font-size: 0.9rem;
+  font-size: 1.15rem;
   margin-top: 8px;
 }
 
@@ -83,14 +97,14 @@
   overflow: hidden;
 }
 
-/* Three 7-segment digits (about 0.75em each) must fit a third of the width. */
+/* Two readouts per row: three 7-segment digits (about 0.75em each) fit easily. */
 .metric .readout {
-  font-size: clamp(26px, 8.6vw, 36px);
+  font-size: clamp(40px, 13vw, 54px);
 }
 
 .metric-label {
   color: var(--dim);
-  font-size: 0.8rem;
+  font-size: 1.15rem;
   margin-top: 6px;
 }
 
@@ -129,7 +143,7 @@
   min-height: 1.2em;
 }
 
-/* Split-screen strip: the score with a flat bar, harsh, speed and Start/Stop in one row.
+/* Split-screen strip: the score with a flat bar; trip score, harsh and speed stacked; Stop.
    Jerk is left out so the digits can be big. */
 @media (max-height: 480px) {
   .view[data-view="drive"]:not([hidden]) {
@@ -140,18 +154,18 @@
     min-height: 0;
   }
 
-  /* Score on the left; harsh and speed stacked on the right, so 3 digits always fit. */
+  /* Score now on the left; trip score, harsh and speed stacked on the right. */
   .live {
-    grid-template-columns: 1.3fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 1fr 1.1fr;
+    grid-template-rows: repeat(3, 1fr);
+    gap: 6px;
     height: 100%;
     min-height: 0;
   }
 
   .live-main {
     grid-column: 1;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
     padding: 10px 12px;
     display: flex;
     flex-direction: column;
@@ -170,21 +184,36 @@
   }
 
   .readout-main {
-    font-size: min(30vh, 22vw);
+    font-size: min(30vh, 18vw);
     margin-top: 0;
   }
 
+  /* 100 has three digits: a bit smaller so it still fits the cell. */
+  .readout-main.wide {
+    font-size: min(24vh, 12.5vw);
+  }
+
+  /* Label beside the digits, so three rows fit the strip's height. */
   .metric {
-    justify-content: center;
-    padding: 6px 10px;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+  }
+
+  .metric {
+    gap: 8px;
   }
 
   .metric .readout {
-    font-size: min(15vh, 10.5vw);
+    font-size: min(12vh, 7.2vw);
   }
 
   .metric-label {
-    margin-top: 4px;
+    margin-top: 0;
+    font-size: 1rem;
+    white-space: nowrap;
   }
 
   .control {

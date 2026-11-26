@@ -71,3 +71,14 @@ export function archGeometry(a = ARCH) {
   }
   return { width: a.width, height: a.height, segments, labels };
 }
+
+/** Score colours on the live display: red below 70, green above 90, amber in between. */
+export const TONES = { low: 70, high: 90 };
+
+/** "low" | "mid" | "high", or null when there's no score yet. */
+export function scoreTone(score, tones = TONES) {
+  if (score == null || !Number.isFinite(score)) return null;
+  if (score < tones.low) return "low";
+  if (score > tones.high) return "high";
+  return "mid";
+}

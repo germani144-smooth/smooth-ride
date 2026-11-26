@@ -85,11 +85,12 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
 
 - Dark warm cabin with an amber 7-segment LCD display. Colours are tokens on `:root` in
   `css/base.css` (`--cabin`, `--lcd`, `--ghost`, `--line`, `--amber`, `--text`, `--dim`,
-  `--red`, `--smooth`); use them, don't add new hex values in other CSS. `js/map.js` mirrors
+  `--red`, `--green`, `--smooth`); use them, don't add new hex values in other CSS. `js/map.js` mirrors
   them for Leaflet.
 - Amber is the display and the accent; red is harsh and Stop; smooth is quiet cream on maps
-  and the drive strip, so only firm (amber) and harsh (red) stand out. Scores are always amber
-  (no green/amber/red score colours).
+  and the drive strip, so only firm (amber) and harsh (red) stand out. Live scores (instant and
+  trip) take a tone from `scoreTone` in `js/core/lcd.js`: red below 70, amber 70-90, green
+  above 90, and the arch and flat bar follow the instant score. Everything else stays amber.
 - Numbers that are readouts use the LCD readout (`setReadout`/`createReadout` in `js/lcd.js`):
   DSEG7 digits right-aligned over ghost 8s (its decimal point has zero width, so "0.4" sits
   over "8.8"; ghost text comes from `ghostFor` in `js/core/lcd.js`). The element
@@ -98,7 +99,8 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   quiet. Its geometry is `archGeometry` in `js/core/lcd.js` (also used for the app icon).
 - Two tabs, Drive and History; Settings is the cog in the header (not a tab, not swiped to).
 - Start/Stop sits at the bottom of the Drive tab, in thumb reach. The split-screen strip
-  shows score (with a flat bar), Harsh and km/h stacked, and Stop; no header, no jerk.
+  shows score (with a flat bar), Trip, Harsh and km/h stacked (labels beside the digits),
+  and Stop; no header, no jerk. Labels on the live view stay big (about 1.15rem).
 - No middle-dot meta strings, no all-caps labels; sentence case.
 
 ## Code layout

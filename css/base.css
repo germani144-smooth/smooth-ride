@@ -30,7 +30,8 @@
   --glow: rgba(255, 182, 72, 0.35);
   --text: #efe6d6;
   --dim: #a08a6a; /* labels and secondary text */
-  --red: #ff6a4d; /* harsh, and Stop */
+  --red: #ff6a4d; /* harsh, Stop, and live scores below 70 */
+  --green: #7ee08a; /* live scores above 90 */
   --on-red: #1a0c06;
   --smooth: #cdbfa8; /* smooth stretches on the map: quiet, so problems stand out */
   --smooth-cell: #4a3c2a; /* smooth stretches in a drive's strip */
@@ -138,6 +139,22 @@ button.danger {
 .readout .digits.hot {
   color: var(--amber);
   text-shadow: 0 0 18px var(--glow);
+}
+
+/* Live score colours (scoreTone in js/core/lcd.js): red below 70, green above 90. */
+.readout .digits.tone-mid {
+  color: var(--amber);
+  text-shadow: 0 0 18px var(--glow);
+}
+
+.readout .digits.tone-low {
+  color: var(--red);
+  text-shadow: 0 0 18px rgba(255, 106, 77, 0.35);
+}
+
+.readout .digits.tone-high {
+  color: var(--green);
+  text-shadow: 0 0 18px rgba(126, 224, 138, 0.35);
 }
 
 @media (prefers-reduced-motion: reduce) {

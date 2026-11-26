@@ -1,6 +1,6 @@
 // Draws the trip-computer display: readouts with ghost digits, the arched bar graph and the
 // flat bar. Built from DOM nodes and text only (never HTML strings). Logic in js/core/lcd.js.
-import { ghostFor, litSegments, archGeometry, ARCH } from "./core/lcd.js";
+import { ghostFor, litSegments, archGeometry, ARCH, scoreTone } from "./core/lcd.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -52,6 +52,18 @@ export function buildArch(svg) {
 /** Draw the flat bar's segments once into `bar`. */
 export function buildBar(bar, segments = 12) {
   bar.replaceChildren(...Array.from({ length: segments }, () => document.createElement("i")));
+}
+
+const TONE_CLASSES = ["tone-low", "tone-mid", "tone-high"];
+
+/** Colour elements by score: red below 70, amber between, green above 90 (none for null). */
+export function setTone(score, ...elements) {
+  const tone = scoreTone(score);
+  for (const element of elements) {
+    if (!element) continue;
+    element.classList.remove(...TONE_CLASSES);
+    if (tone) element.classList.add(`tone-${tone}`);
+  }
 }
 
 /** Light the arch and the flat bar up to `score` (0..100, or null for none). */

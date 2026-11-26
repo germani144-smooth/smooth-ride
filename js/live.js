@@ -3,7 +3,7 @@ import { createAnalyzer } from "./core/analysis.js";
 import { makeDrive, finalizeDrive, packFix } from "./core/drives.js";
 import { fmtSpeed, fmtNumber, fmtDuration } from "./core/format.js";
 import { db } from "./db.js";
-import { setReadout, setBars } from "./lcd.js";
+import { setReadout, setBars, setTone } from "./lcd.js";
 
 const SAVE_EVERY = 10; // fixes; an in-progress drive survives a crash or reload
 
@@ -41,8 +41,13 @@ export function createRecorder({ els, onStopped, car = null }) {
 
   function render() {
     const l = analyzer.live();
+    const trip = analyzer.summary().score; // the drive so far; null until 30 s and 0.2 km
     setReadout(els.score, l.score == null ? "--" : String(l.score));
+    els.score.parentElement.classList.toggle("wide", l.score >= 100);
     setBars(l.score, els.arch, els.bar);
+    setTone(l.score, els.score, els.arch, els.bar);
+    setReadout(els.trip, trip == null ? "--" : String(trip));
+    setTone(trip, els.trip);
     setReadout(els.jerk, fmtNumber(l.rmsJerk, 1));
     setReadout(els.events, String(l.harsh), 1);
     // With the car connected, that tile shows live fuel use instead (js/car.js).
@@ -51,7 +56,10 @@ export function createRecorder({ els, onStopped, car = null }) {
 
   function resetDisplay() {
     setReadout(els.score, "--");
+    els.score.parentElement.classList.remove("wide");
     setBars(null, els.arch, els.bar);
+    setTone(null, els.score, els.arch, els.bar, els.trip);
+    setReadout(els.trip, "--");
     setReadout(els.jerk, "--");
     setReadout(els.events, "0", 1);
     if (!car?.showsFuel()) setReadout(els.speed, "--", 3);
@@ -65,6 +73,7 @@ export function createRecorder({ els, onStopped, car = null }) {
       lon: c.longitude,
       speed: c.speed ?? null,
       accuracy: c.accuracy ?? null,
+      altitude: c.altitude ?? null, // metres; for course difficulty (climb)
     };
     const sample = analyzer.push(fix);
     if (!sample) {

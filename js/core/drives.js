@@ -1,5 +1,6 @@
 // Drive records as stored on the phone. Fixes are kept as compact arrays
-// [t, lat, lon, speed|null, accuracy|null] to keep storage and exports small.
+// [t, lat, lon, speed|null, accuracy|null, altitude|null] to keep storage and exports small.
+// Altitude (m) was added in 1.1; older drives have 5-element fixes and read as null.
 import { analyzeFixes, ANALYSIS_VERSION } from "./analysis.js";
 import { summarizeCar, isValidRows } from "./car.js";
 import { buildRibbon } from "./track.js";
@@ -7,11 +8,25 @@ import { buildRibbon } from "./track.js";
 export const round = (n, digits) => (n == null ? null : Number(n.toFixed(digits)));
 
 export function packFix(f) {
-  return [f.t, round(f.lat, 6), round(f.lon, 6), round(f.speed, 2), round(f.accuracy, 1)];
+  return [
+    f.t,
+    round(f.lat, 6),
+    round(f.lon, 6),
+    round(f.speed, 2),
+    round(f.accuracy, 1),
+    round(f.altitude ?? null, 1),
+  ];
 }
 
 export function unpackFix(a) {
-  return { t: a[0], lat: a[1], lon: a[2], speed: a[3] ?? null, accuracy: a[4] ?? null };
+  return {
+    t: a[0],
+    lat: a[1],
+    lon: a[2],
+    speed: a[3] ?? null,
+    accuracy: a[4] ?? null,
+    altitude: a[5] ?? null,
+  };
 }
 
 export function makeDrive({ id, source, name = null, fixes = [], now = Date.now() }) {

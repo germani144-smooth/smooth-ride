@@ -73,6 +73,22 @@ test("live numbers fit without scrolling", async ({ page }) => {
   expect(box.width).toBeLessThanOrEqual(viewport.width);
 });
 
+test("trip score sits next to the instant score; labels are big enough to read driving", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await expect(page.getByTestId("trip")).toHaveText("--");
+  await expect(page.getByTestId("trip")).toBeVisible();
+  await expect(page.getByTestId("trip")).not.toHaveClass(/tone-/);
+  const labels = page.locator(".metric:visible .metric-label");
+  expect(await labels.count()).toBeGreaterThanOrEqual(3);
+  for (const size of await labels.evaluateAll((els) =>
+    els.map((el) => parseFloat(getComputedStyle(el).fontSize)),
+  )) {
+    expect(size).toBeGreaterThanOrEqual(16);
+  }
+});
+
 test("service worker installs its own cache and works offline", async ({ page, context }) => {
   await page.goto("./");
   await page.evaluate(() => navigator.serviceWorker.ready);

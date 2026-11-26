@@ -40,7 +40,16 @@ export function parseGpx(text) {
     const speed = speedText === null ? null : num(speedText);
     const accText = tag(body, "accuracy");
     const accuracy = accText === null ? null : num(accText);
-    fixes.push({ t, lat, lon, speed: speed !== null && speed >= 0 ? speed : null, accuracy });
+    const eleText = tag(body, "ele");
+    const altitude = eleText === null ? null : num(eleText);
+    fixes.push({
+      t,
+      lat,
+      lon,
+      speed: speed !== null && speed >= 0 ? speed : null,
+      accuracy,
+      altitude,
+    });
   }
   if (fixes.length < 2) throw new Error("No timed track points found in this GPX file.");
   fixes.sort((a, b) => a.t - b.t);

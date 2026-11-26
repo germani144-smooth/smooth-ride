@@ -169,8 +169,10 @@ test("gpx: parses points in any attribute order, namespaced speed, skips untimed
     lon: 20,
     speed: 12.5,
     accuracy: null,
+    altitude: null,
   });
   assert.equal(fixes[1].speed, null);
+  assert.equal(fixes[1].altitude, 3); // <ele>3</ele>
   assert.equal(fixes[2].speed, 11);
   assert.equal(fixes[2].t - fixes[0].t, 2500);
 });
@@ -183,7 +185,14 @@ test("gpx: rejects non-GPX and empty tracks", () => {
 test("drives: pack, validate, finalize, rescore flag, sort", () => {
   const fixes = straightDrive(60, () => 15);
   const f = fixes[3];
-  assert.deepEqual(unpackFix(packFix(f)), { ...f, lat: Number(f.lat.toFixed(6)) });
+  assert.deepEqual(unpackFix(packFix(f)), {
+    ...f,
+    lat: Number(f.lat.toFixed(6)),
+    altitude: null,
+  });
+  assert.equal(unpackFix(packFix({ ...f, altitude: 412.37 })).altitude, 412.4);
+  // Drives from before 1.1 have 5-element fixes: altitude reads as null.
+  assert.equal(unpackFix([1, 2, 3, 4, 5]).altitude, null);
   const d = makeDrive({ source: "gpx", fixes, now: 1 });
   assert.equal(d.inProgress, false);
   assert.ok(isValidDrive(d));
