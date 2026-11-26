@@ -1,15 +1,14 @@
 // History tab: overall score, list of drives with their firm/harsh strip, drive details,
 // GPX import and the demo drive. Built with DOM nodes and textContent only.
 import { parseGpx } from "./core/gpx.js";
-import { demoFixes, DEMO_NAME } from "./core/demo.js";
+import { demoFixes } from "./core/demo.js";
 import { makeDrive, finalizeDrive, needsRescore, sortDrives } from "./core/drives.js";
 import { fmtDistance, fmtDuration, fmtSpeed, fmtNumber, fmtDate } from "./core/format.js";
 import { db } from "./db.js";
 import { profileScore } from "./core/profile.js";
 import { showDriveMap } from "./map.js";
-import { createReadout } from "./lcd.js";
-
-const SOURCE_LABEL = { live: "Live", gpx: "GPX", demo: "Demo" };
+import { createReadout, setTone } from "./lcd.js";
+import { t } from "./core/i18n.js";
 
 const el = (tag, props = {}, children = []) => {
   const node = document.createElement(tag);
@@ -40,10 +39,10 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
   function mapCard(d, token) {
     const box = el("div", { class: "drive-map", "data-noswipe": "", "data-testid": "drive-map" });
     const legend = el("div", { class: "map-legend" }, [
-      el("span", { class: "key key-smooth", text: "Smooth" }),
-      el("span", { class: "key key-firm", text: "Firm" }),
-      el("span", { class: "key key-harsh", text: "Harsh" }),
-      el("span", { class: "key key-event", text: "Harsh event" }),
+      el("span", { class: "key key-smooth", text: t("map.smooth") }),
+      el("span", { class: "key key-firm", text: t("map.firm") }),
+      el("span", { class: "key key-harsh", text: t("map.harsh") }),
+      el("span", { class: "key key-event", text: t("map.event") }),
     ]);
     const note = el("p", { class: "status" });
     // Draw once the box is in the page, so Leaflet can measure it.
@@ -72,6 +71,22 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
     }
   }
 
+  /** Demo drives are named in the current language; others by their GPX name or date. */
+  function driveName(d) {
+    if (d.source === "demo") return t("history.demoName");
+    return d.name || fmtDate(d.summary.startedAt);
+  }
+
+  /** A drive's score in the list, coloured like the live score. */
+  function scoreReadout(score) {
+    const readout = createReadout(score == null ? "--" : String(score), {
+      hot: true,
+      className: "drive-score",
+    });
+    setTone(score, readout.digits);
+    return readout.root;
+  }
+
   function stat(label, value) {
     return el("div", { class: "stat" }, [
       el("span", { class: "stat-value", text: value }),
@@ -82,15 +97,15 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
   /** Course difficulty and the three parts it's made of (see js/core/difficulty.js). */
   function courseStats(c) {
     return el("div", { class: "course-stats", "data-testid": "course-stats" }, [
-      el("h3", { text: "Course difficulty" }),
+      el("h3", { text: t("course.title") }),
       el("div", { class: "stats" }, [
-        stat("Difficulty /10", fmtNumber(c.difficulty, 1)),
-        stat("Turning /4.5", fmtNumber(c.turning, 1)),
-        stat("Bends /3", fmtNumber(c.bends, 1)),
-        stat("Hills /2.5", c.hills == null ? "--" : fmtNumber(c.hills, 1)),
-        stat("Turning °/km", String(c.turningPerKm)),
-        stat("Bends /km", fmtNumber(c.bendsPerKm, 1)),
-        stat("Up and down m/km", c.hillsPerKm == null ? "--" : fmtNumber(c.hillsPerKm, 1)),
+        stat(t("course.difficulty"), fmtNumber(c.difficulty, 1)),
+        stat(t("course.turning"), fmtNumber(c.turning, 1)),
+        stat(t("course.bends"), fmtNumber(c.bends, 1)),
+        stat(t("course.hills"), c.hills == null ? "--" : fmtNumber(c.hills, 1)),
+        stat(t("course.turningPerKm"), String(c.turningPerKm)),
+        stat(t("course.bendsPerKm"), fmtNumber(c.bendsPerKm, 1)),
+        stat(t("course.hillsPerKm"), c.hillsPerKm == null ? "--" : fmtNumber(c.hillsPerKm, 1)),
       ]),
     ]);
   }
@@ -99,16 +114,16 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
   function carStats(c) {
     const pct = (x) => (x == null ? "--" : `${Math.round(x)}%`);
     return el("div", { class: "car-stats", "data-testid": "car-stats" }, [
-      el("h3", { text: "Car data" }),
+      el("h3", { text: t("carData.title") }),
       el("div", { class: "stats" }, [
         stat("L/100 km", fmtNumber(c.lPer100km, 1)),
-        stat("Fuel used L", fmtNumber(c.litres, 2)),
-        stat("Idling L", fmtNumber(c.idleLitres, 2)),
-        stat("Avg rpm", c.avgRpm == null ? "--" : String(Math.round(c.avgRpm))),
-        stat("Max rpm", c.maxRpm == null ? "--" : String(Math.round(c.maxRpm))),
-        stat("Avg throttle", pct(c.avgThrottle)),
-        stat("Max throttle", pct(c.maxThrottle)),
-        stat("Cold engine", c.coldShare == null ? "--" : pct(c.coldShare * 100)),
+        stat(t("carData.fuel"), fmtNumber(c.litres, 2)),
+        stat(t("carData.idle"), fmtNumber(c.idleLitres, 2)),
+        stat(t("carData.avgRpm"), c.avgRpm == null ? "--" : String(Math.round(c.avgRpm))),
+        stat(t("carData.maxRpm"), c.maxRpm == null ? "--" : String(Math.round(c.maxRpm))),
+        stat(t("carData.avgThrottle"), pct(c.avgThrottle)),
+        stat(t("carData.maxThrottle"), pct(c.maxThrottle)),
+        stat(t("carData.cold"), c.coldShare == null ? "--" : pct(c.coldShare * 100)),
       ]),
     ]);
   }
@@ -118,26 +133,26 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
     const wrap = el("div", { class: "drive-detail", "data-testid": "drive-detail" }, [
       mapCard(d, token),
       el("div", { class: "stats" }, [
-        stat("Distance", fmtDistance(s.distance)),
-        stat("Time", fmtDuration(s.duration)),
-        stat("Avg km/h", fmtSpeed(s.avgSpeed)),
-        stat("Max km/h", fmtSpeed(s.maxSpeed)),
+        stat(t("detail.distance"), fmtDistance(s.distance)),
+        stat(t("detail.time"), fmtDuration(s.duration)),
+        stat(t("detail.avgSpeed"), fmtSpeed(s.avgSpeed)),
+        stat(t("detail.maxSpeed"), fmtSpeed(s.maxSpeed)),
         stat("RMS jerk m/s³", fmtNumber(s.rmsJerk, 2)),
         stat("RMS accel m/s²", fmtNumber(s.rmsAccel, 2)),
-        stat("Harsh brakes", String(s.events.brake)),
-        stat("Harsh accels", String(s.events.accel)),
-        stat("Sharp corners", String(s.events.lateral)),
-        stat("Harsh /10 km", fmtNumber(s.harshPer10km, 1)),
+        stat(t("detail.brakes"), String(s.events.brake)),
+        stat(t("detail.accels"), String(s.events.accel)),
+        stat(t("detail.corners"), String(s.events.lateral)),
+        stat(t("detail.harshPer10"), fmtNumber(s.harshPer10km, 1)),
         // brakeLossPerKm is J/kg per km, which is the same as kJ per tonne per km.
-        stat("Braking kJ/t per km", fmtNumber(s.brakeLossPerKm, 0)),
-        stat("Stops /km", fmtNumber(s.stopsPerKm, 2)),
+        stat(t("detail.braking"), fmtNumber(s.brakeLossPerKm, 0)),
+        stat(t("detail.stops"), fmtNumber(s.stopsPerKm, 2)),
       ]),
     ]);
     if (s.course) wrap.appendChild(courseStats(s.course));
     if (s.car) wrap.appendChild(carStats(s.car));
-    const del = el("button", { type: "button", class: "danger", text: "Delete drive" });
+    const del = el("button", { type: "button", class: "danger", text: t("detail.delete") });
     del.addEventListener("click", async () => {
-      if (!window.confirm("Delete this drive?")) return;
+      if (!window.confirm(t("detail.confirmDelete"))) return;
       await db.delete(d.id);
       open = null;
       render();
@@ -163,18 +178,19 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
     const scoreText = p.score == null ? "--" : String(p.score);
     const sub =
       p.score == null
-        ? "Appears after your first scored drive."
-        : `${fmtDistance(p.distance)} over ${p.drives} drive${p.drives === 1 ? "" : "s"}`;
+        ? t("history.profileEmpty")
+        : t("history.profileSub", { distance: fmtDistance(p.distance), count: p.drives });
     const score = createReadout(scoreText, { hot: true });
     score.digits.classList.add("profile-score");
+    setTone(p.score, score.digits); // red below 70, amber 70-89, green from 90
     profile.replaceChildren(
       score.root,
       el("span", { class: "profile-main" }, [
-        el("span", { class: "profile-title", text: "Your score" }),
+        el("span", { class: "profile-title", text: t("history.yourScore") }),
         el("span", { class: "profile-sub", text: sub }),
         el("span", {
           class: "profile-note",
-          text: "Longer drives count for more. Demo drives don't count.",
+          text: t("history.profileNote"),
         }),
       ]),
     );
@@ -191,28 +207,27 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
       list.appendChild(
         el("p", {
           class: "hint",
-          text: "No drives yet. Record one on the Drive tab, or import a GPX file.",
+          text: t("history.empty"),
         }),
       );
       return;
     }
     for (const d of drives) {
       const s = d.summary;
-      const scoreText = s.score == null ? "--" : String(s.score);
       const meta = [
         fmtDistance(s.distance),
         fmtDuration(s.duration),
-        `${s.harsh} harsh`,
+        t("history.harshCount", { count: s.harsh }),
         s.car?.lPer100km != null ? `${fmtNumber(s.car.lPer100km, 1)} L/100 km` : null,
-        SOURCE_LABEL[d.source] || "Live",
+        t(`source.${["live", "gpx", "demo"].includes(d.source) ? d.source : "live"}`),
       ].filter(Boolean);
       const head = el(
         "button",
         { type: "button", class: "drive-row", "aria-expanded": String(open === d.id) },
         [
-          createReadout(scoreText, { hot: true, className: "drive-score" }).root,
+          scoreReadout(s.score),
           el("span", { class: "drive-main" }, [
-            el("span", { class: "drive-title", text: d.name || fmtDate(s.startedAt) }),
+            el("span", { class: "drive-title", text: driveName(d) }),
             el(
               "span",
               { class: "drive-sub" },
@@ -223,7 +238,7 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
             createReadout(s.course ? fmtNumber(s.course.difficulty, 1) : "--", {
               className: "drive-difficulty-readout",
             }).root,
-            el("span", { class: "drive-difficulty-label", text: "Difficulty" }),
+            el("span", { class: "drive-difficulty-label", text: t("history.difficulty") }),
           ]),
         ],
       );
@@ -255,7 +270,7 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
         errors.push(`${file.name}: ${err.message}`);
       }
     }
-    status.textContent = [ok ? `Imported ${ok} drive${ok === 1 ? "" : "s"}.` : "", ...errors]
+    status.textContent = [ok ? t("history.imported", { count: ok }) : "", ...errors]
       .filter(Boolean)
       .join(" ");
     render();
@@ -265,10 +280,10 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
   demoButton.addEventListener("click", async () => {
     // Place it ten minutes ago so it sorts to the top.
     const fixes = demoFixes(Date.now() - 10 * 60 * 1000);
-    const drive = finalizeDrive(makeDrive({ source: "demo", name: DEMO_NAME, fixes }));
+    const drive = finalizeDrive(makeDrive({ source: "demo", fixes }));
     await db.put(drive);
     open = drive.id;
-    status.textContent = "Added a simulated demo drive. Delete it any time.";
+    status.textContent = t("history.demoAdded");
     render();
   });
 

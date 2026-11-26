@@ -36,7 +36,13 @@
       <h1 class="brand">Smooth Ride</h1>
       <span class="topbar-right">
         <span class="rec-timer" id="rec-timer" data-testid="rec-timer" hidden></span>
-        <button type="button" class="cog" id="settings-btn" aria-label="Settings">
+        <button
+          type="button"
+          class="cog"
+          id="settings-btn"
+          aria-label="Settings"
+          data-i18n-aria="header.settings"
+        >
           <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
             <path
               d="M10.3 2.8h3.4l.5 2.6a7.4 7.4 0 0 1 1.9 1.1l2.5-.9 1.7 2.9-2 1.7a7.4 7.4 0 0 1 0 2.2l2 1.7-1.7 2.9-2.5-.9a7.4 7.4 0 0 1-1.9 1.1l-.5 2.6h-3.4l-.5-2.6a7.4 7.4 0 0 1-1.9-1.1l-2.5.9-1.7-2.9 2-1.7a7.4 7.4 0 0 1 0-2.2l-2-1.7 1.7-2.9 2.5.9a7.4 7.4 0 0 1 1.9-1.1z"
@@ -57,10 +63,13 @@
               ><span class="digits" data-testid="score">--</span>
             </div>
             <div class="sbar" id="sbar" aria-hidden="true"></div>
-            <div class="lcd-caption"><span>Smoothness now</span><span>last 10 s</span></div>
+            <div class="lcd-caption">
+              <span data-i18n="live.now">Smoothness now</span
+              ><span data-i18n="live.window">last 10 s</span>
+            </div>
           </div>
           <div class="lcd throttle" data-testid="throttle" hidden>
-            <span class="throttle-label">Throttle</span>
+            <span class="throttle-label" data-i18n="live.throttle">Throttle</span>
             <div class="throttle-bar" id="throttle-bar" aria-hidden="true"></div>
             <span class="throttle-value" data-testid="throttle-value">--</span>
           </div>
@@ -69,21 +78,21 @@
               <span class="ghost" aria-hidden="true"></span
               ><span class="digits" data-testid="trip">--</span>
             </div>
-            <span class="metric-label">Trip score</span>
+            <span class="metric-label" data-i18n="live.trip">Trip score</span>
           </div>
           <div class="lcd metric metric-difficulty">
             <div class="readout">
               <span class="ghost" aria-hidden="true"></span
               ><span class="digits" data-testid="difficulty">--</span>
             </div>
-            <span class="metric-label">Difficulty</span>
+            <span class="metric-label" data-i18n="live.difficulty">Difficulty</span>
           </div>
           <div class="lcd metric metric-harsh">
             <div class="readout">
               <span class="ghost" aria-hidden="true"></span
               ><span class="digits hot" data-testid="events">0</span>
             </div>
-            <span class="metric-label">Harsh</span>
+            <span class="metric-label" data-i18n="live.harsh">Harsh</span>
           </div>
           <div class="lcd metric metric-jerk">
             <div class="readout">
@@ -97,7 +106,7 @@
               <span class="ghost" aria-hidden="true"></span
               ><span class="digits" data-testid="speed">--</span>
             </div>
-            <span class="metric-label" data-testid="speed-label">km/h</span>
+            <span class="metric-label" data-testid="speed-label" data-i18n="live.speed">km/h</span>
           </div>
         </div>
         <div class="car-bar" data-testid="car-bar">
@@ -107,7 +116,7 @@
           </span>
         </div>
         <div class="control">
-          <p class="hint">
+          <p class="hint" data-i18n="live.hint">
             Mount the phone, tap Start drive, then open Google Maps in split screen. The screen
             stays on while recording.
           </p>
@@ -117,32 +126,62 @@
       </section>
 
       <section id="view-history" class="view" data-view="history" hidden>
-        <h2>History</h2>
+        <h2 data-i18n="history.title">History</h2>
         <div class="profile lcd" id="profile" data-testid="profile"></div>
         <div class="tools">
-          <label class="button" for="gpx-file">Import GPX</label>
+          <label class="button" for="gpx-file" data-i18n="history.importGpx">Import GPX</label>
           <input type="file" id="gpx-file" accept=".gpx,application/gpx+xml" multiple hidden />
-          <button type="button" id="demo-btn">Demo drive</button>
+          <button type="button" id="demo-btn" data-i18n="history.demo">Demo drive</button>
         </div>
         <p class="status" id="gpx-status" role="status"></p>
         <ul class="drive-list" id="drive-list"></ul>
       </section>
 
       <section id="view-settings" class="view" data-view="settings" hidden>
-        <h2>Settings</h2>
+        <h2 data-i18n="settings.title">Settings</h2>
         <div class="card">
-          <h3>App</h3>
-          <p>Version <span data-testid="version"></span></p>
-          <button type="button" id="check-updates">Check for updates</button>
+          <h3 data-i18n="settings.app">App</h3>
+          <p>
+            <span data-i18n="settings.version">Version</span> <span data-testid="version"></span>
+          </p>
+          <button type="button" id="check-updates" data-i18n="settings.checkUpdates">
+            Check for updates
+          </button>
           <p class="status" id="update-status" role="status"></p>
         </div>
         <div class="card">
-          <h3>Backup</h3>
-          <p class="hint">Your data stays on this phone. Export a backup now and then.</p>
-          <button type="button" id="export-btn">Export</button>
-          <label class="button" for="import-file">Import</label>
+          <h3><label for="language" data-i18n="settings.language">Language</label></h3>
+          <select id="language" data-testid="language"></select>
+        </div>
+        <div class="card">
+          <h3 data-i18n="backup.title">Backup</h3>
+          <p class="hint" data-i18n="backup.hint">
+            Your data stays on this phone. Export a backup now and then.
+          </p>
+          <div class="button-row">
+            <button type="button" id="export-btn" data-i18n="backup.exportAll">Export all</button>
+            <button type="button" id="choose-btn" data-i18n="backup.choose">Choose drives</button>
+            <label class="button" for="import-file" data-i18n="backup.import">Import</label>
+          </div>
           <input type="file" id="import-file" accept="application/json,.json" hidden />
+          <div class="export-picker" id="export-picker" data-testid="export-picker" hidden>
+            <div class="button-row">
+              <button type="button" id="pick-all" data-i18n="backup.selectAll">Select all</button>
+              <button type="button" id="pick-none" data-i18n="backup.selectNone">
+                Select none
+              </button>
+            </div>
+            <ul class="pick-list" id="pick-list"></ul>
+            <div class="button-row">
+              <button type="button" class="primary" id="export-selected"></button>
+              <button type="button" id="pick-cancel" data-i18n="backup.cancel">Cancel</button>
+            </div>
+          </div>
           <p class="status" id="backup-status" role="status"></p>
+        </div>
+        <div class="card about" data-testid="about">
+          <h3 data-i18n="about.title">About</h3>
+          <div id="about-body"></div>
         </div>
       </section>
     </main>
@@ -150,8 +189,10 @@
     <div class="swipe-label" id="swipe-label" aria-hidden="true"></div>
 
     <nav class="tabs" aria-label="Sections">
-      <button type="button" data-tab="drive" aria-current="page">Drive</button>
-      <button type="button" data-tab="history">History</button>
+      <button type="button" data-tab="drive" aria-current="page" data-i18n="tabs.drive">
+        Drive
+      </button>
+      <button type="button" data-tab="history" data-i18n="tabs.history">History</button>
     </nav>
   </body>
 </html>

@@ -3,6 +3,7 @@
 import { buildTrack } from "./core/track.js";
 import { unpackFix } from "./core/drives.js";
 import { TILE_SOURCES, createTileFallback } from "./core/tiles.js";
+import { t } from "./core/i18n.js";
 
 const LEAFLET = "vendor/leaflet-1.9.4/";
 // Same palette as css/base.css: smooth is quiet cream so only firm and harsh stand out.
@@ -13,9 +14,9 @@ const RED = "#ff6a4d";
 const COLORS = { 0: CREAM, 1: AMBER, 2: RED };
 const EVENT_STYLE = {
   // Every harsh event is a red dot (where you lost points); the popup says which kind.
-  brake: { color: RED, label: "Harsh braking" },
-  accel: { color: RED, label: "Harsh acceleration" },
-  lateral: { color: RED, label: "Sharp corner" },
+  brake: { color: RED, label: "event.brake" },
+  accel: { color: RED, label: "event.accel" },
+  lateral: { color: RED, label: "event.lateral" },
 };
 
 let leafletPromise = null;
@@ -67,7 +68,7 @@ export function loadLeaflet() {
       js.onload = () => resolve(window.L);
       js.onerror = () => {
         leafletPromise = null;
-        reject(new Error("Map could not load."));
+        reject(new Error(t("map.failed")));
       };
       document.head.appendChild(js);
     });
@@ -128,7 +129,7 @@ export async function showDriveMap(container, drive) {
       fillOpacity: 1,
       className: `event event-${ev.kind}`,
     })
-      .bindPopup(popupText(style.label))
+      .bindPopup(popupText(t(style.label)))
       .addTo(map);
   }
 
@@ -143,8 +144,8 @@ export async function showDriveMap(container, drive) {
     })
       .bindPopup(popupText(text))
       .addTo(map);
-  pin(track.start, AMBER, "pin-start", "Start");
-  pin(track.end, CABIN, "pin-end", "Finish");
+  pin(track.start, AMBER, "pin-start", t("map.start"));
+  pin(track.end, CABIN, "pin-end", t("map.finish"));
 
   map.fitBounds(track.bounds, { padding: [24, 24], maxZoom: 17 });
   return map;

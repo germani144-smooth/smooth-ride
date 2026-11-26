@@ -1,4 +1,5 @@
 // Display formatting (pure).
+import { t } from "./i18n.js";
 export function fmtDistance(m) {
   if (m == null || !Number.isFinite(m)) return "--";
   return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(m < 10000 ? 2 : 1)} km`;
@@ -22,14 +23,14 @@ export function fmtNumber(x, digits = 1) {
   return x == null || !Number.isFinite(x) ? "--" : x.toFixed(digits);
 }
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-/** A drive's date and time, e.g. "Mon 24 Nov, 08:28" (with the year when it isn't this year). */
+/**
+ * A drive's date and time, e.g. "Mon 24 Nov, 08:28" (with the year when it isn't this year).
+ * Day and month names come from the current language.
+ */
 export function fmtDate(ms, now = Date.now()) {
   if (!Number.isFinite(ms)) return "--";
   const d = new Date(ms);
   const pad = (n) => String(n).padStart(2, "0");
   const year = d.getFullYear() === new Date(now).getFullYear() ? "" : ` ${d.getFullYear()}`;
-  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}${year}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${t("days")[d.getDay()]} ${d.getDate()} ${t("months")[d.getMonth()]}${year}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

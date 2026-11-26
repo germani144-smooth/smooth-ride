@@ -63,6 +63,14 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   bends 3, hills 2.5; every number lives in `DIFFICULTY`. Calibration: Madeira drives about
   5.5-7 before hills, a Danish motorway about 0. Changing it also bumps `ANALYSIS_VERSION`.
 - Never reload the page for an update while a drive is recording.
+- Languages: English (default), Danish, Brazilian Portuguese. No user-visible text in code or
+  HTML without a key: static text uses `data-i18n` / `data-i18n-aria` (applied by
+  `js/i18n.js`), script text uses `t()` from `js/core/i18n.js`. Add every new key to all three
+  files in `js/core/lang/` (a unit test checks keys and placeholders match). A language
+  change relabels in place (no reload). Labels must still fit the split-screen strip in the
+  longest language.
+- Export: all (with settings) or chosen drives (`partial: true`, drives only). Importing a
+  partial export adds drives; a full one replaces everything.
 - Swipe between tabs behaves exactly like Lift Log's. Every number lives in `SWIPE` in
   `js/core/swipe.js` (unit tested); `js/swipe.js` listens on the whole document with passive
   touch listeners only, no library; respect `prefers-reduced-motion`. Mark anything that pans or drags with
@@ -98,8 +106,9 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   them for Leaflet.
 - Amber is the display and the accent; red is harsh and Stop; smooth is quiet cream on maps
   and the drive strip, so only firm (amber) and harsh (red) stand out. Live scores (instant and
-  trip) take a tone from `scoreTone` in `js/core/lcd.js`: red below 70, amber 70-90, green
-  above 90, and the arch and flat bar follow the instant score. Everything else stays amber.
+  trip) and the scores in History (each drive and the overall score) take a tone from
+  `scoreTone` in `js/core/lcd.js`: red below 70, amber 70-89, green from 90; the arch and flat
+  bar follow the instant score. Everything else stays amber.
 - Numbers that are readouts use the LCD readout (`setReadout`/`createReadout` in `js/lcd.js`):
   DSEG7 digits right-aligned over ghost 8s (its decimal point has zero width, so "0.4" sits
   over "8.8"; ghost text comes from `ghostFor` in `js/core/lcd.js`). The element

@@ -1,5 +1,6 @@
 // Tolerant GPX parser (pure string parsing, so it runs in tests without a DOM).
 // Returns fixes in the same shape as live GPS: { t (ms), lat, lon, speed (m/s|null), accuracy (m|null) }.
+import { t } from "./i18n.js";
 
 const num = (s) => {
   const n = Number(String(s).trim());
@@ -18,7 +19,7 @@ const tag = (body, name) => {
 
 export function parseGpx(text) {
   const src = String(text || "");
-  if (!/<gpx\b/i.test(src)) throw new Error("This file is not a GPX file.");
+  if (!/<gpx\b/i.test(src)) throw new Error(t("error.notGpx"));
 
   const trk = src.match(/<trk\b[^>]*>([\s\S]*?)<\/trk>/);
   const nameSrc = trk ? trk[1].split(/<trkseg\b/)[0] : src.split(/<trk\b/)[0];
@@ -51,7 +52,7 @@ export function parseGpx(text) {
       altitude,
     });
   }
-  if (fixes.length < 2) throw new Error("No timed track points found in this GPX file.");
+  if (fixes.length < 2) throw new Error(t("error.noPoints"));
   fixes.sort((a, b) => a.t - b.t);
   return { name: name ? decodeEntities(name) : null, fixes };
 }

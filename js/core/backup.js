@@ -1,15 +1,22 @@
 // Versioned Export/Import. The file format number only goes up; every older format
 // gets a migration step so old exports keep importing.
 import { APP } from "../version.js";
+import { t } from "./i18n.js";
 
 export const BACKUP_FORMAT = 1;
 
-export function buildBackup({ version, data, now = new Date() }) {
+/**
+ * A whole backup (all drives and settings), or with `partial` some chosen drives only:
+ * importing a partial export adds its drives and leaves everything else on the phone alone.
+ * The flag is optional, so format 1 stays format 1.
+ */
+export function buildBackup({ version, data, partial = false, now = new Date() }) {
   return {
     app: APP,
     format: BACKUP_FORMAT,
     appVersion: version,
     exportedAt: now.toISOString(),
+    ...(partial ? { partial: true } : {}),
     data,
   };
 }
@@ -28,24 +35,24 @@ export function parseBackup(text) {
   try {
     backup = JSON.parse(text);
   } catch {
-    throw new Error("Not a valid JSON file.");
+    throw new Error(t("error.json"));
   }
   if (!backup || typeof backup !== "object" || backup.app !== APP) {
-    throw new Error("This file is not a Smooth Ride export.");
+    throw new Error(t("error.notExport"));
   }
   if (!Number.isInteger(backup.format) || backup.format < 1) {
-    throw new Error("Unknown export format.");
+    throw new Error(t("error.format"));
   }
   if (backup.format > BACKUP_FORMAT) {
-    throw new Error("This export is from a newer version. Update the app first.");
+    throw new Error(t("error.newer"));
   }
   while (backup.format < BACKUP_FORMAT) {
     const step = MIGRATIONS[backup.format];
-    if (!step) throw new Error(`No migration from format ${backup.format}.`);
+    if (!step) throw new Error(t("error.migration", { format: backup.format }));
     backup = step(backup);
   }
   if (!backup.data || typeof backup.data !== "object" || Array.isArray(backup.data)) {
-    throw new Error("Export has no data.");
+    throw new Error(t("error.noData"));
   }
   return backup;
 }

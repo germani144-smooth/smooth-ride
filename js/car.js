@@ -5,9 +5,9 @@ import { packRow, createConsumption, createThrottleScale } from "./core/car.js";
 import { fmtNumber } from "./core/format.js";
 import { serialAvailable, openAdapter } from "./obd-serial.js";
 import { setReadout, buildBar, setBars } from "./lcd.js";
+import { t } from "./core/i18n.js";
 
 const THROTTLE_SEGMENTS = 20;
-const JERK_LABEL = "Jerk m/s³";
 
 const MIN_CYCLE_MS = 250; // don't hammer the adapter faster than this
 
@@ -32,7 +32,7 @@ export function createCar({ els }) {
   function showFuel(on) {
     showingFuel = on;
     if (!on) {
-      els.metricLabel.textContent = JERK_LABEL;
+      els.metricLabel.textContent = t("live.jerk");
       setReadout(els.metric, "--");
     }
   }
@@ -77,9 +77,11 @@ export function createCar({ els }) {
         if (capture) capture.push(packRow(row));
         renderRow(row);
       } else if (++misses === 5) {
-        setStatus("Car not answering (ignition off?)");
+        setStatus(t("car.notAnswering"));
       }
-      if (misses === 0 && els.status.textContent.startsWith("Car not")) setStatus("Car connected.");
+      if (misses === 0 && els.status.textContent === t("car.notAnswering")) {
+        setStatus(t("car.connected"));
+      }
       const wait = MIN_CYCLE_MS - (Date.now() - started);
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     }
@@ -88,11 +90,11 @@ export function createCar({ els }) {
   async function connect() {
     if (running) return;
     if (!serialAvailable()) {
-      setStatus("This browser can't reach Bluetooth adapters. Use Chrome on Android.");
+      setStatus(t("car.noSerial"));
       return;
     }
     els.button.disabled = true;
-    setStatus("Connecting…");
+    setStatus(t("car.connecting"));
     try {
       link = await openAdapter({ onClose: () => running && lost() });
       session = createElmSession(link);
@@ -101,11 +103,11 @@ export function createCar({ els }) {
       misses = 0;
       consumption = createConsumption();
       throttleScale = createThrottleScale();
-      els.button.textContent = "Disconnect car";
+      els.button.textContent = t("car.disconnect");
       showCar(true);
       setStatus(
-        `Car connected${info.version ? ` (${info.version})` : ""}.` +
-          (session.hasFuel ? "" : " This car doesn't report fuel use."),
+        (info.version ? t("car.connectedVersion", { version: info.version }) : t("car.connected")) +
+          (session.hasFuel ? "" : ` ${t("car.noFuel")}`),
       );
       loop();
     } catch (err) {
@@ -114,8 +116,8 @@ export function createCar({ els }) {
       session = null;
       setStatus(
         err && err.name === "NotFoundError"
-          ? "No adapter chosen."
-          : `Couldn't connect: ${err?.message || err}`,
+          ? t("car.noAdapter")
+          : t("car.failed", { message: err?.message || err }),
       );
     } finally {
       els.button.disabled = false;
@@ -127,8 +129,8 @@ export function createCar({ els }) {
     link = null;
     showFuel(false);
     showCar(false);
-    els.button.textContent = "Connect car";
-    setStatus("Car disconnected.");
+    els.button.textContent = t("car.connect");
+    setStatus(t("car.disconnected"));
   }
 
   async function disconnect() {
@@ -138,14 +140,22 @@ export function createCar({ els }) {
     await l?.close();
     showFuel(false);
     showCar(false);
-    els.button.textContent = "Connect car";
+    els.button.textContent = t("car.connect");
     setStatus("");
   }
 
   els.button.addEventListener("click", () => (running ? disconnect() : connect()));
 
+  /** Texts that depend on state, after a language change. */
+  function relabel() {
+    els.button.textContent = running ? t("car.disconnect") : t("car.connect");
+    if (!showingFuel) els.metricLabel.textContent = t("live.jerk");
+  }
+  relabel();
+
   return {
     connected,
+    relabel,
     /** The jerk tile shows fuel use instead while this is true. */
     showsFuel: () => running && showingFuel,
     startCapture() {

@@ -14,8 +14,16 @@ phone and choose "Install app".
   pinned copies of Leaflet for maps and two fonts, kept in the repo). Runs fully offline after
   the first visit, except for map tiles.
 - **Your data stays on your phone.** Everything is stored in the browser under keys starting
-  with `smooth-ride.`. Nothing is sent anywhere. Use **Settings (the cog) → Export** for a backup file,
-  and **Import** to restore it (the file is versioned, so old backups keep working).
+  with `smooth-ride.`. Nothing is sent anywhere. Use **Settings (the cog) → Export all** for a
+  backup file, and **Import** to restore it (the file is versioned, so old backups keep
+  working). **Choose drives** exports only the drives you tick; importing such a file adds
+  those drives (the same drive again replaces itself) and leaves everything else alone,
+  while importing a full backup replaces all data on the phone.
+- **Languages.** English (default), Danish and Brazilian Portuguese, chosen in **Settings →
+  Language** and remembered. All text lives in `js/core/lang/`; a unit test checks every
+  language has every text.
+- **About.** **Settings → About** explains how the score and difficulty work and how to drive
+  for a good score, in the chosen language.
 - **Updates.** The service worker keeps one cache per version (`smooth-ride-<version>`) and
   serves files cache-first. When a new version is published, the app checks on start and
   whenever you return to it, downloads the whole new version in one go, and reloads once
@@ -76,7 +84,7 @@ split screen. The Drive tab shows:
 - **Harsh:** harsh brakes, harsh accelerations and sharp corners so far this drive.
 - **km/h:** current speed (fuel use instead, with the car connected).
 
-Both scores turn red below 70 and green above 90 (amber in between), and the arch follows
+Both scores turn red below 70 and green from 90 (amber from 70 to 89), and the arch follows
 the score now. In the split-screen strip it keeps the score now (with a flat bar under it),
 Trip, Difficulty, Harsh, km/h and Stop, big enough to read at a glance; jerk is left out there. The header shows how
 long you've been recording.
@@ -135,7 +143,8 @@ The top of **History** shows your overall score: every drive's score weighted by
 distance, so a 40 km drive counts ten times as much as a 4 km one. For example, 40 km at 80
 plus 4 km at 30 gives (80×40 + 30×4) / 44 = 75. Live and GPX drives both count; demo drives
 and drives too short to score don't. It updates as you add or delete drives, and when the
-scoring is retuned.
+scoring is retuned. Like the live score, every score in History is green from 90, amber from
+70 to 89 and red below 70.
 
 ### Seeing a drive on the map
 
@@ -245,7 +254,10 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `css/profile.css`       | Overall score card                                                                 |
 | `css/car.css`           | Connect car bar, throttle bar and car layout on the Drive tab, Car data stats      |
 | `css/settings.css`      | Settings cards (opened with the cog)                                               |
-| `js/app.js`             | Starts everything: tabs and the cog, backup Export/Import, updates                 |
+| `js/app.js`             | Starts everything: tabs and the cog, language, backup Export/Import, updates       |
+| `js/i18n.js`            | Puts the current language on the page (`data-i18n` attributes)                     |
+| `js/export.js`          | Settings: choose which drives to export                                            |
+| `js/about.js`           | Settings: About, how it works and how to get a good score                          |
 | `js/version.js`         | The app version (must match `sw.js` and `package.json`)                            |
 | `js/live.js`            | Recording: GPS → analyzer → live numbers, wake lock, saving the drive              |
 | `js/drives.js`          | History tab: overall score, drive list and strips, details, GPX import, demo       |
@@ -269,6 +281,10 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/core/swipe.js`      | Swipe numbers and decisions (start, cancel, follow, fade, switch)                  |
 | `js/core/lcd.js`        | Display logic: ghost digits, lit segments, the arch's geometry, score colours      |
 | `js/core/format.js`     | Display formatting: distance, duration, speed, score colour                        |
+| `js/core/i18n.js`       | Languages: `t()` with placeholders and plurals, current language, fallback         |
+| `js/core/lang/en.js`    | English texts (default; every other language has the same keys)                    |
+| `js/core/lang/da.js`    | Danish texts                                                                       |
+| `js/core/lang/pt-BR.js` | Brazilian Portuguese texts                                                         |
 | `js/core/backup.js`     | Versioned Export/Import file format                                                |
 | `js/core/storage.js`    | Prefixed `smooth-ride.` key/value storage                                          |
 | `js/core/update.js`     | When an app update may reload the page                                             |

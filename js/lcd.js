@@ -56,7 +56,7 @@ export function buildBar(bar, segments = 12) {
 
 const TONE_CLASSES = ["tone-low", "tone-mid", "tone-high"];
 
-/** Colour elements by score: red below 70, amber between, green above 90 (none for null). */
+/** Colour elements by score: red below 70, amber 70-89, green from 90 (none for null). */
 export function setTone(score, ...elements) {
   const tone = scoreTone(score);
   for (const element of elements) {

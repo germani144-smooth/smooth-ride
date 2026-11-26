@@ -240,7 +240,13 @@
   .metric-speed .metric-label {
     margin-top: 0;
     font-size: 1rem;
-    white-space: nowrap;
+    line-height: 1.1;
+    min-width: 0;
+  }
+
+  /* Longer labels (Danish, Portuguese) wrap to two lines; the digits never shrink. */
+  .metric .readout {
+    flex: none;
   }
 
   .control {

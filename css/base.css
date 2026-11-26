@@ -31,7 +31,7 @@
   --text: #efe6d6;
   --dim: #a08a6a; /* labels and secondary text */
   --red: #ff6a4d; /* harsh, Stop, and live scores below 70 */
-  --green: #7ee08a; /* live scores above 90 */
+  --green: #7ee08a; /* scores from 90 */
   --on-red: #1a0c06;
   --smooth: #cdbfa8; /* smooth stretches on the map: quiet, so problems stand out */
   --smooth-cell: #4a3c2a; /* smooth stretches in a drive's strip */
@@ -95,6 +95,12 @@ button,
   margin: 4px 8px 4px 0;
 }
 
+/* A label styled as a button (file pickers) centres its text like a real button. */
+.button {
+  display: inline-flex;
+  align-items: center;
+}
+
 button:focus-visible,
 .button:focus-visible,
 input:focus-visible + .button {
@@ -141,7 +147,7 @@ button.danger {
   text-shadow: 0 0 18px var(--glow);
 }
 
-/* Live score colours (scoreTone in js/core/lcd.js): red below 70, green above 90. */
+/* Score colours (scoreTone in js/core/lcd.js): red below 70, amber 70-89, green from 90. */
 .readout .digits.tone-mid {
   color: var(--amber);
   text-shadow: 0 0 18px var(--glow);

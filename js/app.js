@@ -10,6 +10,10 @@ import { createDrivesView } from "./drives.js";
 import { createSwipe } from "./swipe.js";
 import { createCar } from "./car.js";
 import { buildArch, buildBar } from "./lcd.js";
+import { LANGUAGES, setLanguage, getLanguage, t } from "./core/i18n.js";
+import { applyTranslations } from "./i18n.js";
+import { renderAbout } from "./about.js";
+import { createExportPicker } from "./export.js";
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -24,6 +28,10 @@ function localBackend() {
 }
 const store = createStore(localBackend());
 let guard = null;
+
+// ---- Language (English by default), before anything writes text ----
+setLanguage(store.get("language", "en"));
+applyTranslations();
 
 // ---- Version ----
 $('[data-testid="version"]').textContent = VERSION;
@@ -117,15 +125,33 @@ createSwipe({
   isBlocked: () => recorder.recording(),
 });
 
+// ---- Settings: language and About ----
+const languageSelect = $("#language");
+for (const { code, name } of LANGUAGES) {
+  const option = document.createElement("option");
+  option.value = code;
+  option.textContent = name;
+  languageSelect.append(option);
+}
+languageSelect.value = getLanguage();
+renderAbout($("#about-body"));
+languageSelect.addEventListener("change", () => {
+  store.set("language", setLanguage(languageSelect.value));
+  applyTranslations();
+  renderAbout($("#about-body"));
+  car.relabel();
+  recorder.relabel();
+  picker.relabel();
+  drivesView.render();
+});
+
 drivesView
   .repair()
   .catch(() => {})
   .finally(() => showView(store.get("ui.tab", "drive")));
 
-// ---- Export / Import ----
-$("#export-btn").addEventListener("click", async () => {
-  const drives = (await db.all()).filter((d) => !d.inProgress);
-  const backup = buildBackup({ version: VERSION, data: { store: store.entries(), drives } });
+// ---- Export (all, or chosen drives) / Import ----
+function download(backup, count) {
   const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -134,7 +160,31 @@ $("#export-btn").addEventListener("click", async () => {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  $("#backup-status").textContent = `Exported ${drives.length} drives to ${a.download}`;
+  $("#backup-status").textContent = t("backup.exported", { count, file: a.download });
+}
+
+$("#export-btn").addEventListener("click", async () => {
+  const drives = (await db.all()).filter((d) => !d.inProgress);
+  download(
+    buildBackup({ version: VERSION, data: { store: store.entries(), drives } }),
+    drives.length,
+  );
+});
+
+const picker = createExportPicker({
+  els: {
+    choose: $("#choose-btn"),
+    picker: $("#export-picker"),
+    list: $("#pick-list"),
+    all: $("#pick-all"),
+    none: $("#pick-none"),
+    exportSelected: $("#export-selected"),
+    cancel: $("#pick-cancel"),
+    status: $("#backup-status"),
+  },
+  loadDrives: () => db.all(),
+  onExport: async (drives) =>
+    download(buildBackup({ version: VERSION, data: { drives }, partial: true }), drives.length),
 });
 
 $("#import-file").addEventListener("change", async (e) => {
@@ -143,19 +193,38 @@ $("#import-file").addEventListener("change", async (e) => {
   if (!file) return;
   const status = $("#backup-status");
   try {
-    if (recorder.recording()) throw new Error("Stop the drive first.");
+    if (recorder.recording()) throw new Error(t("backup.stopFirst"));
     const backup = parseBackup(await file.text());
     const drives = backup.data.drives || [];
     if (!Array.isArray(drives) || !drives.every(isValidDrive)) {
-      throw new Error("The file has damaged drive data.");
+      throw new Error(t("backup.damaged"));
     }
-    if (!window.confirm("Replace all Smooth Ride data on this phone with this backup?")) return;
-    store.clear();
-    for (const [key, value] of Object.entries(backup.data.store || {})) store.set(key, value);
-    await db.replaceAll(drives.map((d) => finalizeDrive({ ...d, inProgress: false })));
-    status.textContent = `Imported ${drives.length} drives from ${String(backup.exportedAt).slice(0, 10)}`;
+    const count = drives.length;
+    const date = String(backup.exportedAt).slice(0, 10);
+    const finished = drives.map((d) => finalizeDrive({ ...d, inProgress: false }));
+    if (backup.partial) {
+      // Chosen drives only: add them (same drive again replaces itself), keep the rest.
+      if (!window.confirm(t("backup.confirmAdd", { count }))) return;
+      for (const drive of finished) await db.put(drive);
+      status.textContent = t("backup.added", { count, date });
+    } else {
+      if (!window.confirm(t("backup.confirmReplace"))) return;
+      store.clear();
+      for (const [key, value] of Object.entries(backup.data.store || {})) store.set(key, value);
+      await db.replaceAll(finished);
+      // The backup's language comes with it.
+      setLanguage(store.get("language", "en"));
+      store.set("language", getLanguage());
+      languageSelect.value = getLanguage();
+      applyTranslations();
+      renderAbout($("#about-body"));
+      car.relabel();
+      recorder.relabel();
+      status.textContent = t("backup.imported", { count, date });
+    }
+    drivesView.render();
   } catch (err) {
-    status.textContent = "Import failed: " + err.message; // textContent: never parsed as HTML
+    status.textContent = t("backup.failed", { message: err.message }); // textContent only
   }
 });
 
@@ -180,15 +249,13 @@ async function setupServiceWorker() {
 
   $("#check-updates").addEventListener("click", async () => {
     const status = $("#update-status");
-    status.textContent = "Checking…";
+    status.textContent = t("settings.checking");
     try {
       await reg.update();
       status.textContent =
-        reg.installing || reg.waiting
-          ? "Update found, installing…"
-          : "You have the latest version.";
+        reg.installing || reg.waiting ? t("settings.updateFound") : t("settings.latest");
     } catch {
-      status.textContent = "Could not check (offline?).";
+      status.textContent = t("settings.offline");
     }
   });
 }

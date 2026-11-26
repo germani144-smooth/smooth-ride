@@ -5,6 +5,7 @@ import { courseDifficulty } from "./core/difficulty.js";
 import { fmtSpeed, fmtNumber, fmtDuration } from "./core/format.js";
 import { db } from "./db.js";
 import { setReadout, setBars, setTone } from "./lcd.js";
+import { t } from "./core/i18n.js";
 
 const SAVE_EVERY = 10; // fixes; an in-progress drive survives a crash or reload
 
@@ -22,7 +23,9 @@ export function createRecorder({ els, onStopped, car = null }) {
 
   /** "Recording 12:04" in the header while a drive is recorded. */
   function tick() {
-    els.timer.textContent = `Recording ${fmtDuration((Date.now() - startedAt) / 1000)}`;
+    els.timer.textContent = t("header.recording", {
+      time: fmtDuration((Date.now() - startedAt) / 1000),
+    });
   }
 
   async function keepAwake() {
@@ -81,7 +84,7 @@ export function createRecorder({ els, onStopped, car = null }) {
     };
     const sample = analyzer.push(fix);
     if (!sample) {
-      setStatus(fix.accuracy > 30 ? `Weak GPS (±${Math.round(fix.accuracy)} m)` : "");
+      setStatus(fix.accuracy > 30 ? t("live.weakGps", { metres: Math.round(fix.accuracy) }) : "");
       return;
     }
     drive.fixes.push(packFix(fix));
@@ -89,7 +92,11 @@ export function createRecorder({ els, onStopped, car = null }) {
     if (drive.fixes.length % 10 === 0) {
       difficulty = courseDifficulty(drive.fixes.map(unpackFix))?.difficulty ?? null;
     }
-    setStatus(sample.event ? labelFor(sample.event) : `GPS ±${Math.round(fix.accuracy ?? 0)} m`);
+    setStatus(
+      sample.event
+        ? t(`event.${sample.event}`)
+        : t("live.gps", { metres: Math.round(fix.accuracy ?? 0) }),
+    );
     render();
     if (++sinceSave >= SAVE_EVERY) {
       sinceSave = 0;
@@ -101,17 +108,17 @@ export function createRecorder({ els, onStopped, car = null }) {
 
   function onError(err) {
     if (err.code === 1) {
-      setStatus("Location permission denied. Allow it in the browser settings.");
+      setStatus(t("live.denied"));
       stop();
     } else {
-      setStatus("Waiting for GPS…");
+      setStatus(t("live.waitingGps"));
     }
   }
 
   async function start() {
     if (recording()) return;
     if (!("geolocation" in navigator)) {
-      setStatus("This browser has no GPS access.");
+      setStatus(t("live.noGps"));
       return;
     }
     drive = makeDrive({ source: "live" });
@@ -126,9 +133,9 @@ export function createRecorder({ els, onStopped, car = null }) {
       maximumAge: 0,
       timeout: 15000,
     });
-    els.toggle.textContent = "Stop drive";
+    els.toggle.textContent = t("live.stop");
     els.toggle.classList.add("recording");
-    setStatus("Waiting for GPS…");
+    setStatus(t("live.waitingGps"));
     startedAt = Date.now();
     tick();
     els.timer.hidden = false;
@@ -146,7 +153,7 @@ export function createRecorder({ els, onStopped, car = null }) {
       /* already released */
     }
     wakeLock = null;
-    els.toggle.textContent = "Start drive";
+    els.toggle.textContent = t("live.start");
     els.toggle.classList.remove("recording");
     clearInterval(clock);
     clock = null;
@@ -155,15 +162,18 @@ export function createRecorder({ els, onStopped, car = null }) {
     if (rows) drive.obd = rows;
     const done = finalizeDrive(drive);
     drive = null;
+    analyzer = createAnalyzer();
+    difficulty = null;
+    resetDisplay(); // back to the waiting display; the status line keeps the saved score
     if (done.fixes.length < 2) {
       await db.delete(done.id);
-      setStatus("Nothing recorded.");
+      setStatus(t("live.nothing"));
     } else {
       await db.put(done);
       setStatus(
         done.summary.score == null
-          ? "Saved (too short to score)."
-          : `Saved. Score ${done.summary.score}.`,
+          ? t("live.savedShort")
+          : t("live.saved", { score: done.summary.score }),
       );
     }
     onStopped(done);
@@ -171,12 +181,13 @@ export function createRecorder({ els, onStopped, car = null }) {
 
   els.toggle.addEventListener("click", () => (recording() ? stop() : start()));
 
-  resetDisplay();
-  return { recording, stop };
-}
+  /** Texts that depend on state, after a language change. */
+  function relabel() {
+    els.toggle.textContent = recording() ? t("live.stop") : t("live.start");
+    if (recording()) tick();
+  }
 
-function labelFor(kind) {
-  return (
-    { brake: "Harsh braking", accel: "Harsh acceleration", lateral: "Sharp corner" }[kind] || ""
-  );
+  resetDisplay();
+  relabel();
+  return { recording, stop, relabel };
 }

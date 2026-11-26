@@ -66,6 +66,10 @@ test("records a drive from GPS and lists it", async ({ page, context }) => {
   await expect(page.getByTestId("record")).toHaveText("Start drive");
   await expect(page.locator("#record-status")).toContainText("Saved");
   await expect(page.getByTestId("rec-timer")).toBeHidden();
+  // Back to the waiting display, not the last numbers of the drive.
+  await expect(page.getByTestId("score")).toHaveText("--");
+  await expect(page.getByTestId("speed")).toHaveText("--");
+  await expect(page.getByTestId("trip")).toHaveText("--");
 
   await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByTestId("drive")).toHaveCount(1);
@@ -128,9 +132,9 @@ test("backup round-trips drives", async ({ page }) => {
   );
   await page.getByRole("button", { name: "Settings" }).click();
   const dl = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export" }).click();
+  await page.getByRole("button", { name: "Export all" }).click();
   const path = await (await dl).path();
-  await expect(page.locator("#backup-status")).toContainText("Exported 1 drives");
+  await expect(page.locator("#backup-status")).toContainText("Exported 1 drive to");
 
   // Wipe drives, then import the backup.
   await page.evaluate(
@@ -146,7 +150,7 @@ test("backup round-trips drives", async ({ page }) => {
   );
   page.once("dialog", (d) => d.accept());
   await page.locator("#import-file").setInputFiles(path);
-  await expect(page.locator("#backup-status")).toContainText("Imported 1 drives");
+  await expect(page.locator("#backup-status")).toContainText("Imported 1 drive from");
   await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.getByTestId("drive")).toHaveCount(1);
 });
@@ -167,4 +171,114 @@ test("each drive in History has a strip showing where it went firm or harsh", as
     .locator("i")
     .evaluateAll((cells) => cells.findIndex((c) => c.classList.contains("r2")));
   expect(firstHarsh).toBeGreaterThan(40);
+});
+
+/** Import n copies of the synthetic GPX drive (as separate files) on the History tab. */
+async function importDrives(page, n) {
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  await page.locator("#gpx-file").setInputFiles(
+    Array.from({ length: n }, (_, i) => ({
+      name: `drive-${i + 1}.gpx`,
+      mimeType: "application/gpx+xml",
+      buffer: Buffer.from(
+        syntheticGpx(120 + i * 30).replace("Test &lt;b&gt;run&lt;/b&gt;", `Run ${i + 1}`),
+      ),
+    })),
+  );
+  await expect(page.getByTestId("drive")).toHaveCount(n);
+}
+
+async function openSettings(page) {
+  const cog = page.getByRole("button", { name: "Settings" });
+  test.skip(!(await cog.isVisible()), "Settings is reached with the cog, hidden in the strip");
+  await cog.click();
+}
+
+test("History scores are coloured like the live score", async ({ page }) => {
+  await page.goto("./");
+  await importDrives(page, 1);
+  const digits = page.getByTestId("drive").locator(".drive-score .digits");
+  await expect(digits).toHaveClass(/tone-(low|mid|high)/);
+  await expect(page.locator(".profile-score")).toHaveClass(/tone-(low|mid|high)/);
+});
+
+test("export chosen drives; importing them adds without removing the others", async ({ page }) => {
+  await page.goto("./");
+  await importDrives(page, 3);
+  await openSettings(page);
+  await page.getByRole("button", { name: "Choose drives" }).click();
+  const picks = page.getByTestId("pick");
+  await expect(picks).toHaveCount(3);
+  await expect(page.locator("#export-selected")).toBeDisabled();
+  await picks.filter({ hasText: "Run 2" }).locator("input").check();
+  await expect(page.locator("#export-selected")).toHaveText("Export 1 drive");
+  const dl = page.waitForEvent("download");
+  await page.locator("#export-selected").click();
+  const file = await (await dl).path();
+  await expect(page.locator("#backup-status")).toContainText("Exported 1 drive to");
+  await expect(page.getByTestId("export-picker")).toBeHidden();
+  const backup = JSON.parse(await (await import("node:fs/promises")).readFile(file, "utf8"));
+  expect(backup.partial).toBe(true);
+  expect(backup.data.drives.map((d) => d.name)).toEqual(["Run 2"]);
+  expect(backup.data.store).toBeUndefined();
+
+  // Delete Run 2 on the phone, then import it back: the other two must stay.
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  await page.getByTestId("drive").filter({ hasText: "Run 2" }).locator(".drive-row").click();
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Delete drive" }).click();
+  await expect(page.getByTestId("drive")).toHaveCount(2);
+  await openSettings(page);
+  page.once("dialog", (d) => d.accept());
+  await page.locator("#import-file").setInputFiles(file);
+  await expect(page.locator("#backup-status")).toContainText("Added 1 drive");
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  await expect(page.getByTestId("drive")).toHaveCount(3);
+
+  // Select all picks every drive.
+  await openSettings(page);
+  await page.getByRole("button", { name: "Choose drives" }).click();
+  await page.getByRole("button", { name: "Select all" }).click();
+  await expect(page.locator("#export-selected")).toHaveText("Export 3 drives");
+});
+
+test("language: Danish and Brazilian Portuguese, remembered after a reload", async ({ page }) => {
+  await page.goto("./");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByTestId("record")).toHaveText("Start drive");
+  await openSettings(page);
+  await page.getByTestId("language").selectOption("da");
+  await expect(page.locator("html")).toHaveAttribute("lang", "da");
+  await expect(page.getByRole("heading", { name: "Indstillinger" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Eksportér alle" })).toBeVisible();
+  await expect(page.getByTestId("record")).toHaveText("Start tur");
+  await expect(page.getByTestId("car-connect")).toHaveText("Forbind bil");
+  await expect(page.locator('.tabs button[data-tab="history"]')).toHaveText("Historik");
+
+  await page.reload();
+  await expect(page.getByTestId("record")).toHaveText("Start tur");
+  await expect(page.locator(".metric-trip .metric-label")).toHaveText("Turens score");
+
+  await openSettings(page);
+  await page.getByTestId("language").selectOption("pt-BR");
+  await expect(page.getByTestId("record")).toHaveText("Iniciar viagem");
+  await page.locator('.tabs button[data-tab="history"]').click();
+  await page.getByRole("button", { name: "Viagem demo" }).click();
+  await expect(page.getByTestId("drive").first()).toContainText("Viagem demo (simulada)");
+  await expect(page.getByTestId("course-stats")).toContainText("Dificuldade do percurso");
+
+  await openSettings(page);
+  await page.getByTestId("language").selectOption("en");
+  await expect(page.getByTestId("record")).toHaveText("Start drive");
+});
+
+test("About explains how it works and how to score well", async ({ page }) => {
+  await page.goto("./");
+  await openSettings(page);
+  const about = page.getByTestId("about");
+  await expect(about.locator("summary")).toHaveCount(6);
+  await about.getByText("How to get a good score").click();
+  await expect(about.getByText("Look far ahead.", { exact: false })).toBeVisible();
+  await about.getByText("The score", { exact: true }).click();
+  await expect(about.getByText("green from 90", { exact: false })).toBeVisible();
 });
