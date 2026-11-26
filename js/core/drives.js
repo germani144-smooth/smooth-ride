@@ -4,6 +4,7 @@
 import { analyzeFixes, ANALYSIS_VERSION } from "./analysis.js";
 import { summarizeCar, isValidRows } from "./car.js";
 import { buildRibbon } from "./track.js";
+import { courseDifficulty } from "./difficulty.js";
 
 export const round = (n, digits) => (n == null ? null : Number(n.toFixed(digits)));
 
@@ -49,6 +50,8 @@ export function finalizeDrive(drive) {
   summary.car = drive.obd ? summarizeCar(drive.obd, summary.distance) : null;
   // Where along the drive it went firm or harsh (the strip under each drive in History).
   summary.ribbon = buildRibbon(fixes);
+  // How hard the road was (0-10), shown next to the score; never changes it.
+  summary.course = courseDifficulty(fixes);
   return { ...drive, inProgress: false, summary };
 }
 

@@ -112,3 +112,10 @@
   font-size: 0.75rem;
   margin-top: 2px;
 }
+
+/* Course difficulty in a drive's details. */
+.course-stats h3 {
+  font-size: 0.9rem;
+  color: var(--dim);
+  margin: 4px 0 0;
+}

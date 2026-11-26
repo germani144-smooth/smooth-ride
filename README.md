@@ -182,6 +182,31 @@ don't depend on how the phone is mounted, and live drives and GPX files score th
   and the calculation restarts on the other side without counting a fake event.
 - When the scoring changes, stored drives are re-scored automatically.
 
+### Course difficulty
+
+An 80 on twisty town roads is a better drive than an 87 on an empty motorway. Each drive in
+**History** therefore shows **Difficulty**, 0.0 to 10.0: how hard the road made it to drive
+smoothly. It's shown next to the score and never changes it. Opening a drive shows the
+three parts it's made of:
+
+- **Bends, up to 5:** how much the road turns per km. Turns are added up over every 100 m
+  with their direction, so GPS wobble cancels out and a real bend adds up. Very gentle
+  curves (radius over about 700 m) are ignored; tight ones (radius under about 95 m) count
+  twice.
+- **Speed changes, up to 3:** how much the speed the road allows swings per km (speed
+  limits, junctions, stop-and-go), from the speed smoothed over 20 s, so it measures the
+  road rather than your pedal. GPS can't see speed limits; the changes they force show up
+  here.
+- **Climb, up to 2:** metres climbed per km, from GPS altitude, with a 5 m dead band so
+  altitude noise doesn't count. Only drives recorded from 1.1 on (or GPX files with
+  elevation) have altitude; older drives get no climb points.
+
+Each part ignores a baseline that every road has (60°/km of turning, 5 km/h per km of speed
+swing) and levels off towards its maximum: points = max × (1 − e^-(value − baseline) /
+scale), with scales of 200°/km, 60 km/h per km and 30 m/km. A straight, steady, flat road
+is 0.0. Town driving lands around 5, an expressway around 2.5, and mountain hairpins
+approach 9 to 10. Drives under 1 km get no difficulty.
+
 ### Coming next
 
 1. Segments: pick a start and end on a recorded drive, nested segments, personal bests, with
@@ -219,6 +244,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/core/analysis.js`   | The analyzer: speed, acceleration, jerk, harsh events, score                       |
 | `js/core/geo.js`        | Distance and bearing between coordinates                                           |
 | `js/core/gpx.js`        | GPX file parser                                                                    |
+| `js/core/difficulty.js` | Course difficulty 0-10: bends, speed changes and climb per km                      |
 | `js/core/drives.js`     | Drive records: compact fixes, finalizing, validation, sorting                      |
 | `js/core/track.js`      | What the map draws, and each drive's firm/harsh strip (ribbon)                     |
 | `js/core/tiles.js`      | Map tile sources (Stadia dark, OpenStreetMap fallback) and when to fall back       |

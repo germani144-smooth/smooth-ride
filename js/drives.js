@@ -79,6 +79,22 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
     ]);
   }
 
+  /** Course difficulty and the three parts it's made of (see js/core/difficulty.js). */
+  function courseStats(c) {
+    return el("div", { class: "course-stats", "data-testid": "course-stats" }, [
+      el("h3", { text: "Course difficulty" }),
+      el("div", { class: "stats" }, [
+        stat("Difficulty /10", fmtNumber(c.difficulty, 1)),
+        stat("Bends /5", fmtNumber(c.bends, 1)),
+        stat("Speed changes /3", fmtNumber(c.speed, 1)),
+        stat("Climb /2", c.climb == null ? "--" : fmtNumber(c.climb, 1)),
+        stat("Turning °/km", String(c.turningPerKm)),
+        stat("Speed swing km/h per km", String(c.swingPerKm)),
+        stat("Climb m/km", c.climbPerKm == null ? "--" : fmtNumber(c.climbPerKm, 1)),
+      ]),
+    ]);
+  }
+
   /** Car (OBD) numbers, when an adapter was connected during the drive. */
   function carStats(c) {
     const pct = (x) => (x == null ? "--" : `${Math.round(x)}%`);
@@ -117,6 +133,7 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
         stat("Stops /km", fmtNumber(s.stopsPerKm, 2)),
       ]),
     ]);
+    if (s.course) wrap.appendChild(courseStats(s.course));
     if (s.car) wrap.appendChild(carStats(s.car));
     const del = el("button", { type: "button", class: "danger", text: "Delete drive" });
     del.addEventListener("click", async () => {
@@ -183,6 +200,7 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
       const s = d.summary;
       const scoreText = s.score == null ? "--" : String(s.score);
       const meta = [
+        s.course ? `Difficulty ${fmtNumber(s.course.difficulty, 1)}` : null,
         fmtDistance(s.distance),
         fmtDuration(s.duration),
         `${s.harsh} harsh`,

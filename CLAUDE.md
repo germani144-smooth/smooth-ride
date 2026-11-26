@@ -56,6 +56,10 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
   `createAnalyzer().push()` in `js/core/analysis.js`. Kinematics come from GPS only, so
   scores don't depend on phone mounting and both sources compare fairly.
 - When scoring changes, bump `ANALYSIS_VERSION`; stored drives are re-scored on load.
+- Course difficulty (0.0-10.0, `courseDifficulty` in `js/core/difficulty.js`, stored as
+  `summary.course`) is shown next to the score and never changes it. Bends up to 5, speed
+  changes up to 3, climb up to 2; every number lives in `DIFFICULTY`. Changing it also
+  bumps `ANALYSIS_VERSION`.
 - Never reload the page for an update while a drive is recording.
 - Swipe between tabs behaves exactly like Lift Log's. Every number lives in `SWIPE` in
   `js/core/swipe.js` (unit tested); `js/swipe.js` listens on the whole document with passive
