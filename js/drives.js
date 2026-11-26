@@ -85,14 +85,12 @@ export function createDrivesView({ list, profile, importInput, demoButton, statu
       el("h3", { text: "Course difficulty" }),
       el("div", { class: "stats" }, [
         stat("Difficulty /10", fmtNumber(c.difficulty, 1)),
-        stat("Bends /3.5", fmtNumber(c.bends, 1)),
-        stat("Fast corners /3.5", fmtNumber(c.corners, 1)),
-        stat("Speed changes /2", fmtNumber(c.speed, 1)),
-        stat("Climb /1", c.climb == null ? "--" : fmtNumber(c.climb, 1)),
+        stat("Turning /4.5", fmtNumber(c.turning, 1)),
+        stat("Bends /3", fmtNumber(c.bends, 1)),
+        stat("Hills /2.5", c.hills == null ? "--" : fmtNumber(c.hills, 1)),
         stat("Turning °/km", String(c.turningPerKm)),
-        stat("Cornering m/s²", fmtNumber(c.corneringLoad, 2)),
-        stat("Speed swing km/h per km", String(c.swingPerKm)),
-        stat("Climb m/km", c.climbPerKm == null ? "--" : fmtNumber(c.climbPerKm, 1)),
+        stat("Bends /km", fmtNumber(c.bendsPerKm, 1)),
+        stat("Up and down m/km", c.hillsPerKm == null ? "--" : fmtNumber(c.hillsPerKm, 1)),
       ]),
     ]);
   }

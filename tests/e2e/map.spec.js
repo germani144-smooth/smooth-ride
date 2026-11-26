@@ -180,7 +180,7 @@ test("the demo drive opens straight on the map", async ({ page }) => {
   const demo = page.getByTestId("drive").filter({ hasText: "Demo drive (simulated)" });
   await expect(demo).toContainText("Demo");
   await expect(demo.getByTestId("drive-difficulty").locator(".digits")).toHaveText(/^\d+\.\d$/);
-  await expect(demo.getByTestId("course-stats")).toContainText("Fast corners /3.5");
+  await expect(demo.getByTestId("course-stats")).toContainText("Bends /3");
   const map = demo.getByTestId("drive-map");
   await expect(map).toHaveClass(/leaflet-container/);
   await expect(map.locator("path.event-brake")).toHaveCount(1);

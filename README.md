@@ -196,31 +196,30 @@ don't depend on how the phone is mounted, and live drives and GPX files score th
 ### Course difficulty
 
 An 80 on twisty town roads is a better drive than an 87 on an empty motorway. Every drive
-therefore gets a **Difficulty**, 0.0 to 10.0: how hard the road made it to drive smoothly.
-History shows it on the right of each drive; while recording, the Drive tab shows it for the
-trip so far (from 1 km). It never changes the score. Opening a drive shows its four parts:
+therefore gets a **Difficulty**, 0.0 to 10.0: how hard the road itself makes it to drive
+smoothly. History shows it on the right of each drive; while recording, the Drive tab shows
+it for the trip so far (from 1 km). It never changes the score.
 
-- **Bends, up to 3.5:** how much the road turns per km. Turns are added up over every 100 m
-  with their direction, so GPS wobble cancels out and a real bend adds up. Very gentle
-  curves (radius over about 700 m) are ignored; tight ones (radius under about 95 m) count
-  twice.
-- **Fast corners, up to 3.5:** the sideways force the bends ask for at the road's speed
-  (speed² × turn), counting only what's above 0.8 m/s². A fast road full of curves scores
-  high; a long motorway curve is a lean, not work, and doesn't count. The speed is smoothed
-  over 20 s, so slowing down for a bend barely changes it.
-- **Speed changes, up to 2:** how much the speed the road allows swings per km (speed
-  limits, junctions, stop-and-go), from the speed smoothed over 20 s, so it measures the
-  road rather than your pedal. GPS can't see speed limits; the changes they force show up
-  here.
-- **Climb, up to 1:** metres climbed per km, from GPS altitude, with a 5 m dead band so
-  altitude noise doesn't count. Only drives recorded from 1.1 on (or GPX files with
-  elevation) have altitude; older drives get no climb points.
+Only the road's shape counts, never speed: driving the same road faster or slower gives the
+same difficulty, so you can't raise it by rushing into bends. Opening a drive shows its three
+parts:
 
-Each part ignores a baseline every road has (40°/km of turning, 5 km/h per km of speed
-swing) and levels off towards its maximum: points = max × (1 − e^-(value − baseline) /
-scale), with scales of 80°/km, 0.12 m/s², 20 km/h per km and 20 m/km. Calibrated on Madeira
-(town 7.0, expressway 6.6, VR1 motorway 6.6, before climb) and simulated Danish roads (a
-motorway 0 to 1, a country road at 80 km/h about 2). Drives under 1 km get no difficulty.
+- **Turning, up to 4.5:** how many degrees the road turns per km. Turns are added up over
+  every 100 m with their direction, so GPS wobble cancels out and a real bend adds up. Very
+  gentle curves (radius over about 700 m, a motorway curve) are ignored; tight ones (radius
+  under about 95 m) count twice.
+- **Bends, up to 3:** how many separate bends per km. A bend counts once it has turned 20°;
+  an S-bend is two.
+- **Hills, up to 2.5:** metres up plus metres down per km, from GPS altitude smoothed over
+  150 m of road, with a 5 m dead band so altitude noise doesn't count. Only drives recorded
+  from 1.1 on (or GPX files with elevation) have altitude; older drives get no hill points.
+
+Each part ignores a baseline every road has (30°/km of turning, 0.3 bends per km, 2 m/km of
+up and down) and levels off towards its maximum: points = max × (1 − e^-(value − baseline) /
+scale), with scales of 80°/km, 1.2 bends per km and 30 m/km. Calibrated on Madeira (town
+6.7, expressway 6.0, VR1 motorway 5.6 before hills, which add about 1 to 2 there) and
+simulated Danish roads (a motorway 0, a gently curving country road under 1). Drives under
+1 km get no difficulty.
 
 ### Coming next
 
@@ -259,7 +258,7 @@ Plain static files, no build step. Logic that can be tested without a browser li
 | `js/core/analysis.js`   | The analyzer: speed, acceleration, jerk, harsh events, score                       |
 | `js/core/geo.js`        | Distance and bearing between coordinates                                           |
 | `js/core/gpx.js`        | GPX file parser                                                                    |
-| `js/core/difficulty.js` | Course difficulty 0-10: bends, fast corners, speed changes and climb               |
+| `js/core/difficulty.js` | Course difficulty 0-10 from the road's shape: turning, bends and hills             |
 | `js/core/drives.js`     | Drive records: compact fixes, finalizing, validation, sorting                      |
 | `js/core/track.js`      | What the map draws, and each drive's firm/harsh strip (ribbon)                     |
 | `js/core/tiles.js`      | Map tile sources (Stadia dark, OpenStreetMap fallback) and when to fall back       |

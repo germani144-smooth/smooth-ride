@@ -8,125 +8,163 @@ const M_PER_DEG = 111195;
 const T0 = 1_700_000_000_000;
 
 /**
- * Synthetic drive at 1 Hz in open sea (not a real place). `headingAt(i)` in degrees
- * (0 = north), `speedAt(i)` in m/s, `altitudeAt(i)` in m or null.
+ * A synthetic road in open sea (not a real place), driven at `speed` m/s with a fix every
+ * second. `headingAt(metres)` in degrees (0 = north), `altitudeAt(metres)` in m or null.
+ * Shape is given per metre of road, so the same road can be driven at any speed.
  */
-function drive(seconds, { headingAt = () => 0, speedAt = () => 20, altitudeAt = () => null }) {
+function road(lengthMetres, { headingAt = () => 0, altitudeAt = () => null, speed = 20 } = {}) {
   const fixes = [];
   let lat = 0.5;
   let lon = 0.5;
-  for (let i = 0; i <= seconds; i++) {
+  let along = 0;
+  for (let i = 0; along <= lengthMetres; i++) {
     if (i > 0) {
-      const heading = (headingAt(i) * Math.PI) / 180;
-      const step = speedAt(i);
-      lat += (step * Math.cos(heading)) / M_PER_DEG;
-      lon += (step * Math.sin(heading)) / (M_PER_DEG * Math.cos((lat * Math.PI) / 180));
+      // Walk the second's distance in 1 m steps so the path follows the road's shape.
+      for (let m = 0; m < speed; m++) {
+        const heading = (headingAt(along) * Math.PI) / 180;
+        lat += Math.cos(heading) / M_PER_DEG;
+        lon += Math.sin(heading) / (M_PER_DEG * Math.cos((lat * Math.PI) / 180));
+        along++;
+      }
     }
-    fixes.push({
-      t: T0 + i * 1000,
-      lat,
-      lon,
-      speed: speedAt(i),
-      accuracy: 5,
-      altitude: altitudeAt(i),
-    });
+    fixes.push({ t: T0 + i * 1000, lat, lon, speed, accuracy: 5, altitude: altitudeAt(along) });
   }
   return fixes;
 }
 
+/** Heading of a road made of arcs: `turnDegrees` over `arcMetres`, then straight, alternating. */
+function bendyHeading({ arcMetres, turnDegrees, straightMetres }) {
+  const period = 2 * (arcMetres + straightMetres);
+  return (metres) => {
+    const into = metres % period;
+    const half = arcMetres + straightMetres;
+    const first = Math.min(into, arcMetres) / arcMetres;
+    const second = into > half ? Math.min(into - half, arcMetres) / arcMetres : 0;
+    // Right, then back left: the heading returns to where it started every period.
+    return turnDegrees * (first - second);
+  };
+}
+
 test("each part ignores its floor and levels off at its maximum", () => {
-  const options = { max: 5, floor: 60, scale: 200 };
-  assert.equal(part(40, options), 0);
-  assert.equal(part(60, options), 0);
-  assert.ok(Math.abs(part(260, options) - 5 * (1 - Math.exp(-1))) < 1e-9);
-  assert.ok(part(100000, options) <= 5);
-  assert.ok(part(100000, options) > 4.99);
+  const options = { max: 4.5, floor: 30, scale: 80 };
+  assert.equal(part(20, options), 0);
+  assert.equal(part(30, options), 0);
+  assert.ok(Math.abs(part(110, options) - 4.5 * (1 - Math.exp(-1))) < 1e-9);
+  assert.ok(part(100000, options) <= 4.5);
+  assert.ok(part(100000, options) > 4.49);
+  const max = DIFFICULTY.turning.max + DIFFICULTY.bends.max + DIFFICULTY.hills.max;
+  assert.equal(max, 10);
 });
 
-test("a straight, steady, flat road is 0.0", () => {
-  const result = courseDifficulty(drive(200, {}));
+test("a straight, flat road is 0.0", () => {
+  const result = courseDifficulty(road(4000));
   assert.equal(result.difficulty, 0);
+  assert.equal(result.turning, 0);
   assert.equal(result.bends, 0);
-  assert.equal(result.speed, 0);
-  assert.equal(result.climb, null); // no altitude recorded
-  assert.equal(result.climbPerKm, null);
+  assert.equal(result.hills, null); // no altitude recorded
+  assert.equal(result.hillsPerKm, null);
 });
 
 test("short drives get no difficulty", () => {
-  assert.equal(courseDifficulty(drive(30, {})), null); // 600 m
+  assert.equal(courseDifficulty(road(600)), null);
 });
 
-test("bends make it harder, sharper bends much harder", () => {
-  // Gentle S-bends: heading swings ±20° every 20 s.
-  const gentle = courseDifficulty(
-    drive(300, { headingAt: (i) => 20 * Math.sin((i * Math.PI) / 20), speedAt: () => 15 }),
-  );
-  // Hairpins: heading swings ±80° every 10 s at low speed.
-  const twisty = courseDifficulty(
-    drive(600, { headingAt: (i) => 80 * Math.sin((i * Math.PI) / 10), speedAt: () => 8 }),
-  );
-  assert.ok(gentle.bends > 0.5, `gentle ${gentle.bends}`);
-  assert.ok(twisty.bends > gentle.bends + 1, `twisty ${twisty.bends} vs ${gentle.bends}`);
-  assert.ok(twisty.bends <= DIFFICULTY.bends.max);
-});
-
-test("fast corners count, a long motorway curve doesn't", () => {
-  // 120 km/h through 2 km-radius curves: about 0.56 m/s² sideways, a lean, not work.
-  // Curve for 30 s every 2 minutes, alternating left and right.
-  let bearing = 0;
-  const curve = [0];
-  for (let i = 1; i <= 1200; i++) {
-    if (i % 120 < 30) bearing += (Math.floor(i / 120) % 2 ? 1 : -1) * (33 / 2000) * (180 / Math.PI);
-    curve.push(bearing);
-  }
-  const motorway = courseDifficulty(drive(1200, { headingAt: (i) => curve[i], speedAt: () => 33 }));
-  assert.equal(motorway.corners, 0);
-  assert.ok(motorway.difficulty <= 1, `motorway ${motorway.difficulty}`);
-  // 90 km/h through 250 m-radius S-bends: about 2.5 m/s² sideways.
-  let heading = 0;
-  const headings = [0];
-  for (let i = 1; i <= 600; i++)
-    headings.push((heading += (Math.floor(i / 15) % 2 ? 1 : -1) * (25 / 250) * (180 / Math.PI)));
-  const fast = courseDifficulty(drive(600, { headingAt: (i) => headings[i], speedAt: () => 25 }));
-  assert.ok(fast.corners > 2.5, `fast corners ${fast.corners}`);
-  assert.ok(fast.corneringLoad > 0.5);
-  assert.ok(fast.difficulty > 5, `fast ${fast.difficulty}`);
-});
-
-test("speed changes the road forces add up to 2", () => {
-  // 50 km/h zones alternating with 90 km/h every minute.
-  const changing = courseDifficulty(
-    drive(600, { speedAt: (i) => (Math.floor(i / 60) % 2 ? 25 : 14) }),
-  );
-  assert.ok(changing.speed >= 0.8, `speed ${changing.speed}`);
-  assert.ok(changing.speed <= 2);
-  assert.equal(changing.bends, 0);
-});
-
-test("climbing counts, GPS altitude noise doesn't", () => {
-  // ±3 m of altitude jitter on a flat road: under the dead band.
-  const noisy = courseDifficulty(drive(300, { altitudeAt: (i) => 50 + 3 * Math.sin(i * 1.7) }));
-  assert.equal(noisy.climb, 0);
-  assert.equal(noisy.climbPerKm, 0);
-  // Up 1 m every 20 m for 3 km, then down: 150 m climbed over 6 km = 25 m/km.
-  const hill = courseDifficulty(
-    drive(300, { altitudeAt: (i) => (i <= 150 ? i : 300 - i), speedAt: () => 20 }),
-  );
-  assert.ok(Math.abs(hill.climbPerKm - 25) < 2, `climb ${hill.climbPerKm} m/km`);
-  assert.ok(hill.climb > 0.5 && hill.climb <= 1, `climb ${hill.climb}`);
+test("speed never changes difficulty: the same road at 36 and 108 km/h", () => {
+  const shape = {
+    headingAt: bendyHeading({ arcMetres: 120, turnDegrees: 70, straightMetres: 200 }),
+    altitudeAt: (metres) => 40 * Math.sin(metres / 600),
+  };
+  const slow = courseDifficulty(road(6000, { ...shape, speed: 10 }));
+  const fast = courseDifficulty(road(6000, { ...shape, speed: 30 }));
+  assert.ok(slow.difficulty > 3, `slow ${slow.difficulty}`);
   assert.ok(
-    Math.abs(hill.difficulty - (hill.bends + hill.corners + hill.speed + hill.climb)) <= 0.15,
+    Math.abs(slow.difficulty - fast.difficulty) <= 0.3,
+    `slow ${slow.difficulty} vs fast ${fast.difficulty}`,
   );
+  assert.equal(slow.bendsPerKm, fast.bendsPerKm);
+});
+
+test("more and tighter bends make it harder", () => {
+  const gentle = courseDifficulty(
+    road(5000, {
+      headingAt: bendyHeading({ arcMetres: 300, turnDegrees: 30, straightMetres: 700 }),
+    }),
+  );
+  const twisty = courseDifficulty(
+    road(5000, {
+      headingAt: bendyHeading({ arcMetres: 60, turnDegrees: 120, straightMetres: 60 }),
+      speed: 8,
+    }),
+  );
+  assert.ok(gentle.difficulty < 1.5, `gentle ${gentle.difficulty}`);
+  assert.ok(twisty.difficulty > 6, `twisty ${twisty.difficulty}`);
+  assert.ok(twisty.bendsPerKm > gentle.bendsPerKm * 3);
+  assert.ok(twisty.turning <= DIFFICULTY.turning.max);
+});
+
+test("an S-bend is two bends", () => {
+  // One 45° right then 45° left, otherwise straight, in 2 km.
+  const result = courseDifficulty(
+    road(2000, {
+      headingAt: (metres) =>
+        metres < 900
+          ? 0
+          : metres < 1000
+            ? 0.45 * (metres - 900)
+            : metres < 1100
+              ? 45 - 0.45 * (metres - 1000)
+              : 0,
+    }),
+  );
+  assert.equal(result.bendsPerKm, 1);
+});
+
+test("a long motorway curve is no bend; GPS wobble makes no bends", () => {
+  // 2 km radius for 600 m (17°): under the noise floor per 100 m.
+  const curve = courseDifficulty(
+    road(4000, {
+      headingAt: (metres) =>
+        metres > 1000 && metres < 1600
+          ? (metres - 1000) * (180 / Math.PI / 2000)
+          : metres >= 1600
+            ? 17.2
+            : 0,
+      speed: 33,
+    }),
+  );
+  assert.equal(curve.difficulty, 0);
+  // ±3 m of drifting position noise on a straight road.
+  let drift = 0;
+  const wobbly = road(4000, { speed: 33 }).map((fix, i) => {
+    drift = 0.9 * drift + 0.6 * Math.sin(i * 2.3);
+    return { ...fix, lon: fix.lon + drift / M_PER_DEG };
+  });
+  assert.equal(courseDifficulty(wobbly).bendsPerKm, 0);
+});
+
+test("hills count up and down; altitude noise doesn't", () => {
+  // ±3 m of altitude jitter on a level road: under the dead band.
+  const noisy = courseDifficulty(
+    road(4000, { altitudeAt: (metres) => 50 + 3 * Math.sin(metres * 0.09) }),
+  );
+  assert.equal(noisy.hills, 0);
+  // Up 100 m over 2 km, then down 100 m: 200 m of up and down over 4 km = 50 m/km.
+  const hill = courseDifficulty(
+    road(4000, { altitudeAt: (metres) => (metres <= 2000 ? metres / 20 : 200 - metres / 20) }),
+  );
+  assert.ok(Math.abs(hill.hillsPerKm - 50) < 5, `hills ${hill.hillsPerKm} m/km`);
+  assert.ok(hill.hills > 1.5 && hill.hills <= DIFFICULTY.hills.max, `hills ${hill.hills}`);
+  assert.ok(Math.abs(hill.difficulty - (hill.turning + hill.bends + hill.hills)) <= 0.15);
 });
 
 test("a gap (tunnel) doesn't turn into a bend", () => {
-  const fixes = drive(200, {});
+  const fixes = road(4000);
   // Lose 30 s in the middle and come out 400 m to the east.
   const after = fixes
     .slice(120)
     .map((f) => ({ ...f, t: f.t + 30_000, lon: f.lon + 400 / M_PER_DEG }));
   const result = courseDifficulty([...fixes.slice(0, 100), ...after]);
-  assert.equal(result.bends, 0);
+  assert.equal(result.difficulty, 0);
 });
 
 test("finalized drives carry the difficulty; the demo drive has some", () => {

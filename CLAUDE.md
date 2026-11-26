@@ -58,9 +58,10 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
 - When scoring changes, bump `ANALYSIS_VERSION`; stored drives are re-scored on load.
 - Course difficulty (0.0-10.0, `courseDifficulty` in `js/core/difficulty.js`, stored as
   `summary.course`) is shown next to the score and never changes it: in History per drive,
-  and live for the trip so far. Bends 3.5, fast corners 3.5, speed changes 2, climb 1; every
-  number lives in `DIFFICULTY`. Calibration: Madeira drives about 6-7, a Danish motorway
-  about 1. Changing it also bumps `ANALYSIS_VERSION`.
+  and live for the trip so far. Only the road's shape counts, never speed (the user's own
+  driving must not move it; a unit test drives the same road at two speeds): turning 4.5,
+  bends 3, hills 2.5; every number lives in `DIFFICULTY`. Calibration: Madeira drives about
+  5.5-7 before hills, a Danish motorway about 0. Changing it also bumps `ANALYSIS_VERSION`.
 - Never reload the page for an update while a drive is recording.
 - Swipe between tabs behaves exactly like Lift Log's. Every number lives in `SWIPE` in
   `js/core/swipe.js` (unit tested); `js/swipe.js` listens on the whole document with passive
