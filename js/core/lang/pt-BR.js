@@ -10,10 +10,10 @@ export default {
 
   "live.now": "Suavidade agora",
   "live.window": "últimos 10 s",
-  "live.trip": "Nota da viagem",
+  "live.trip": "Score da viagem",
   "live.difficulty": "Dificuldade",
   "live.harsh": "Bruscos",
-  "live.jerk": "Tranco m/s³",
+  "live.jerk": "Jerk m/s³",
   "live.speed": "km/h",
   "live.throttle": "Acelerador",
   "live.hint":
@@ -163,7 +163,7 @@ export default {
     },
     {
       title: "A nota",
-      body: "100 é totalmente suave. Três coisas baixam a nota:\n\n- Tranco: o quão de repente as forças mudam. Pisar fundo ou frear de uma vez é o que mais custa.\n- Força: o quanto você acelera, freia e faz curvas no geral.\n- Momentos bruscos a cada 10 km: frear mais forte que 2,5 m/s², acelerar mais forte que 2,0 m/s² ou fazer curva acima de 3,0 m/s² de lado.\n\nSuavidade agora cobre os últimos 10 segundos. Nota da viagem cobre a viagem inteira até agora. No Histórico, cada viagem tem a sua nota, e Sua nota junta todas, com as viagens mais longas contando mais.\n\nCores: verde a partir de 90, âmbar de 70 a 89, vermelho abaixo de 70.",
+      body: "100 é totalmente suave. Três coisas baixam a nota:\n\n- Jerk: o quão de repente as forças mudam. Pisar fundo ou frear de uma vez é o que mais custa.\n- Força: o quanto você acelera, freia e faz curvas no geral.\n- Momentos bruscos a cada 10 km: frear mais forte que 2,5 m/s², acelerar mais forte que 2,0 m/s² ou fazer curva acima de 3,0 m/s² de lado.\n\nSuavidade agora cobre os últimos 10 segundos. Score da viagem cobre a viagem inteira até agora. No Histórico, cada viagem tem a sua nota, e Sua nota junta todas, com as viagens mais longas contando mais.\n\nCores: verde a partir de 90, âmbar de 70 a 89, vermelho abaixo de 70.",
     },
     {
       title: "Dificuldade do percurso",

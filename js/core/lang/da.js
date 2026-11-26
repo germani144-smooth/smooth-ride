@@ -8,12 +8,12 @@ export default {
   "header.settings": "Indstillinger",
   "header.recording": "Optager {time}",
 
-  "live.now": "Blødhed nu",
+  "live.now": "Smoothness nu",
   "live.window": "sidste 10 s",
   "live.trip": "Turens score",
   "live.difficulty": "Sværhed",
-  "live.harsh": "Hårde",
-  "live.jerk": "Ryk m/s³",
+  "live.harsh": "Harsh",
+  "live.jerk": "Jerk m/s³",
   "live.speed": "km/t",
   "live.throttle": "Speeder",
   "live.hint":
@@ -58,7 +58,7 @@ export default {
     other: "{distance} over {count} ture",
   },
   "history.profileNote": "Længere ture tæller mere. Demoture tæller ikke.",
-  "history.harshCount": "{count} hårde",
+  "history.harshCount": "{count} harsh",
   "history.difficulty": "Sværhed",
   "source.live": "Live",
   "source.gpx": "GPX",
@@ -77,7 +77,7 @@ export default {
   "detail.brakes": "Hårde opbremsninger",
   "detail.accels": "Hårde accelerationer",
   "detail.corners": "Skarpe sving",
-  "detail.harshPer10": "Hårde /10 km",
+  "detail.harshPer10": "Harsh /10 km",
   "detail.braking": "Bremsning kJ/t pr. km",
   "detail.stops": "Stop /km",
   "detail.delete": "Slet tur",
@@ -158,7 +158,7 @@ export default {
     },
     {
       title: "Scoren",
-      body: "100 er helt blødt. Tre ting trækker ned:\n\n- Ryk: hvor pludseligt kræfterne ændrer sig. At hugge i pedalerne koster mest.\n- Kraft: hvor hårdt du accelererer, bremser og drejer i det hele taget.\n- Hårde øjeblikke pr. 10 km: opbremsning hårdere end 2,5 m/s², acceleration hårdere end 2,0 m/s² eller sving over 3,0 m/s² sidelæns.\n\nBlødhed nu dækker de sidste 10 sekunder. Turens score dækker hele turen indtil nu. I Historik har hver tur sin egen score, og Din score samler dem alle, hvor længere ture tæller mere.\n\nFarver: grøn fra 90, gul fra 70 til 89, rød under 70.",
+      body: "100 er helt blødt. Tre ting trækker ned:\n\n- Jerk: hvor pludseligt kræfterne ændrer sig. At hugge i pedalerne koster mest.\n- Kraft: hvor hårdt du accelererer, bremser og drejer i det hele taget.\n- Hårde øjeblikke pr. 10 km: opbremsning hårdere end 2,5 m/s², acceleration hårdere end 2,0 m/s² eller sving over 3,0 m/s² sidelæns.\n\nSmoothness nu dækker de sidste 10 sekunder. Turens score dækker hele turen indtil nu. I Historik har hver tur sin egen score, og Din score samler dem alle, hvor længere ture tæller mere.\n\nFarver: grøn fra 90, gul fra 70 til 89, rød under 70.",
     },
     {
       title: "Rutens sværhed",

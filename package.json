@@ -1,6 +1,6 @@
 {
   "name": "smooth-ride",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "private": true,
   "type": "module",
   "description": "Smooth Ride: a personal Strava-style smooth-driving tracker (PWA).",
