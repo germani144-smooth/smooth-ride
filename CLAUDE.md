@@ -74,7 +74,8 @@ smoothness, not speed). Served by GitHub Pages from `main` at `https://germani14
 - Swipe between tabs behaves exactly like Lift Log's. Every number lives in `SWIPE` in
   `js/core/swipe.js` (unit tested); `js/swipe.js` listens on the whole document with passive
   touch listeners only, no library; respect `prefers-reduced-motion`. Mark anything that pans or drags with
-  the finger (map, charts) `data-noswipe`. No swiping on the live view or while recording.
+  the finger (map, charts) `data-noswipe`. No swiping at all while recording;
+  otherwise the live numbers swipe like the rest of the Drive tab.
 - Maps: Leaflet 1.9.4 is a verbatim copy under `vendor/leaflet-1.9.4/` (all its files are
   precached), loaded on demand by `js/map.js`. Tiles: Stadia Maps "Alidade Smooth Dark",
   authenticated by the app's domain registered in the user's Stadia account (no API key

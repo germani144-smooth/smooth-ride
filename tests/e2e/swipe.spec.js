@@ -220,11 +220,16 @@ test("no swipe on data-noswipe areas such as a map", async ({ page }) => {
   await expect(current(page)).toHaveText("History");
 });
 
-test("no swipe on the live driving numbers", async ({ page }) => {
-  const box = await page.getByTestId("live").boundingBox();
-  const p = { x: box.x + box.width - 20, y: box.y + box.height / 2 };
-  await swipe(page, p, { x: p.x - 200, y: p.y });
-  await expect(current(page)).toHaveText("Drive");
+test("swiping works on the live numbers when not recording", async ({ page }) => {
+  // On the dials (the score) and on the small readouts.
+  for (const id of ["score", "speed"]) {
+    const box = await page.getByTestId(id).boundingBox();
+    const p = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    await swipe(page, { x: p.x + 60, y: p.y }, { x: p.x - 140, y: p.y });
+    await expect(current(page)).toHaveText("History");
+    await page.getByRole("button", { name: "Drive", exact: true }).click();
+    await expect(current(page)).toHaveText("Drive");
+  }
 });
 
 test("no swipe at all while recording a drive", async ({ page, context }) => {
@@ -235,6 +240,11 @@ test("no swipe at all while recording a drive", async ({ page, context }) => {
   await page.getByTestId("record").click();
   await expect(page.getByTestId("record")).toHaveText("Stop drive");
   await swipe(page, d, { x: d.x - 200, y: d.y });
+  await expect(current(page)).toHaveText("Drive");
+  // Not on the live numbers either.
+  const box = await page.getByTestId("score").boundingBox();
+  const p = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  await swipe(page, { x: p.x + 60, y: p.y }, { x: p.x - 140, y: p.y });
   await expect(current(page)).toHaveText("Drive");
   await page.getByTestId("record").click();
 });

@@ -66,8 +66,8 @@ like Lift Log's swipe):
 - You can rest your finger before swiping: a long press doesn't open a menu or select text.
 
 Swiping never starts with two fingers, in fields, on the bottom bar, in dialogs, or on the
-map and charts. It's off on the live numbers and completely off while a drive is recording,
-so nothing switches by accident while driving. With "reduce motion" turned on in Android,
+map and charts. It works anywhere on the Drive tab, including on the dials, but is completely
+off while a drive is recording, so nothing switches by accident while driving. With "reduce motion" turned on in Android,
 tabs switch without the slide. In Settings a swipe only gives a little; use the cog or a tab
 to leave.
 
